@@ -71,7 +71,8 @@ fn spawn_player(mut commands: Commands, ascii: Res<AsciiSheet>) {
             },
             ..Default::default()
         })
-        .insert(Name::new("Player")).id();
+        .insert(Name::new("Player"))
+        .id();
 
     let mut background_sprite = TextureAtlasSprite::new(0);
     background_sprite.custom_size = Some(Vec2::splat(TILE_SIZE));
@@ -89,5 +90,5 @@ fn spawn_player(mut commands: Commands, ascii: Res<AsciiSheet>) {
         })
         .id();
 
-        commands.entity(player).push_children(&[background]);
+    commands.entity(player).push_children(&[background]);
 }

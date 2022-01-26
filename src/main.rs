@@ -69,7 +69,7 @@ fn spawn_camera(mut commands: Commands) {
 fn basic_player_movement(
     keyboard: Res<Input<KeyCode>>,
     time: Res<Time>,
-    mut player_query: Query<(&Player, &mut Transform)>
+    mut player_query: Query<(&Player, &mut Transform)>,
 ) {
     let speed = 0.3;
     let (_, mut transform) = player_query.single_mut();
@@ -88,10 +88,10 @@ fn basic_player_movement(
 }
 
 fn camera_follow(
-    mut camera_query: Query<(&Camera, &mut Transform), (Without<Player>)>,
-    player_query: Query<(&Player, &Transform)>
+    mut camera_query: Query<(&Camera, &mut Transform), Without<Player>>,
+    player_query: Query<(&Player, &Transform)>,
 ) {
-    let (_, mut cam_transform, ) = camera_query.single_mut();
+    let (_, mut cam_transform) = camera_query.single_mut();
     let (_, player_transform) = player_query.single();
 
     cam_transform.translation.x = player_transform.translation.x;

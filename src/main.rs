@@ -2,8 +2,10 @@ use bevy::prelude::*;
 use bevy::render::camera::ScalingMode;
 use bevy::window::WindowMode;
 
+mod player;
 mod tilemap;
 
+use player::Player;
 use tilemap::spawn_sample_map;
 
 pub const RESOLUTION: f32 = 16.0 / 9.0;
@@ -12,9 +14,6 @@ pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
 
 #[derive(Component, Clone)]
 pub struct AsciiSheet(pub Handle<TextureAtlas>);
-
-#[derive(Component)]
-pub struct Player;
 
 fn main() {
     let height = 900.0;
@@ -32,10 +31,11 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_startup_system_to_stage(StartupStage::PreStartup, load_ascii)
         .add_startup_system(spawn_camera)
-        .add_startup_system(spawn_player)
+        .add_startup_system(player::spawn_player)
         .add_startup_system(spawn_sample_map)
         .add_system(camera_follow)
-        .add_system(basic_player_movement)
+        .add_system(player::basic_player_movement.label("movement"))
+        .add_system(player::wall_collision.after("movement"))
         .run();
 }
 
@@ -66,27 +66,6 @@ fn spawn_camera(mut commands: Commands) {
     commands.spawn_bundle(camera);
 }
 
-fn basic_player_movement(
-    keyboard: Res<Input<KeyCode>>,
-    time: Res<Time>,
-    mut player_query: Query<(&Player, &mut Transform)>,
-) {
-    let speed = 0.3;
-    let (_, mut transform) = player_query.single_mut();
-    if keyboard.pressed(KeyCode::A) {
-        transform.translation.x -= speed * time.delta_seconds();
-    }
-    if keyboard.pressed(KeyCode::D) {
-        transform.translation.x += speed * time.delta_seconds();
-    }
-    if keyboard.pressed(KeyCode::W) {
-        transform.translation.y += speed * time.delta_seconds();
-    }
-    if keyboard.pressed(KeyCode::S) {
-        transform.translation.y -= speed * time.delta_seconds();
-    }
-}
-
 fn camera_follow(
     mut camera_query: Query<(&Camera, &mut Transform), Without<Player>>,
     player_query: Query<(&Player, &Transform)>,
@@ -96,42 +75,4 @@ fn camera_follow(
 
     cam_transform.translation.x = player_transform.translation.x;
     cam_transform.translation.y = player_transform.translation.y;
-}
-
-fn spawn_player(mut commands: Commands, ascii: Res<AsciiSheet>) {
-    let mut sprite = TextureAtlasSprite::new(1);
-    sprite.custom_size = Some(Vec2::splat(TILE_SIZE));
-    sprite.color = Color::rgb(0.3, 0.3, 0.9);
-
-    let player = commands
-        .spawn_bundle(SpriteSheetBundle {
-            sprite: sprite,
-            texture_atlas: ascii.0.clone(),
-            transform: Transform {
-                translation: Vec3::new(2.0 * TILE_SIZE, -6.0 * TILE_SIZE, 900.0),
-                ..Default::default()
-            },
-            ..Default::default()
-        })
-        .insert(Name::new("Player"))
-        .insert(Player)
-        .id();
-
-    let mut background_sprite = TextureAtlasSprite::new(0);
-    background_sprite.custom_size = Some(Vec2::splat(TILE_SIZE));
-    background_sprite.color = Color::rgb(0.5, 0.5, 0.5);
-
-    let background = commands
-        .spawn_bundle(SpriteSheetBundle {
-            sprite: background_sprite,
-            texture_atlas: ascii.0.clone(),
-            transform: Transform {
-                translation: Vec3::new(0.0, 0.0, -1.0),
-                ..Default::default()
-            },
-            ..Default::default()
-        })
-        .id();
-
-    commands.entity(player).push_children(&[background]);
 }

@@ -80,7 +80,7 @@ fn parse_tile(commands: &mut Commands, ascii: &AsciiSheet, c: char, x: f32, y: f
         .id();
 
     match c {
-        '#' | 'W' | 'D' => {
+        '#' | 'W' => {
             commands.entity(tile_ent).insert(TileCollider);
         }
         _ => {}

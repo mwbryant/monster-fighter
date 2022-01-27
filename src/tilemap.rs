@@ -28,6 +28,29 @@ fn load_map(mut commands: Commands, ascii: Res<AsciiSheet>, path: &Path) {
 }
 
 fn parse_tile(commands: &mut Commands, ascii: &AsciiSheet, c: char, x: f32, y: f32) {
+    let tile = sprite_lookup(c);
+
+    let tile_ent = commands
+        .spawn_bundle(SpriteSheetBundle {
+            sprite: tile,
+            texture_atlas: ascii.0.clone(),
+            transform: Transform {
+                translation: Vec3::new(TILE_SIZE * x, TILE_SIZE * y, 100.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .id();
+
+    match c {
+        '#' | 'W' => {
+            commands.entity(tile_ent).insert(TileCollider);
+        }
+        _ => {}
+    }
+}
+
+fn sprite_lookup(c: char) -> TextureAtlasSprite {
     let mut tile = match c {
         '#' => {
             let mut sprite = TextureAtlasSprite::new('#' as usize);
@@ -66,23 +89,5 @@ fn parse_tile(commands: &mut Commands, ascii: &AsciiSheet, c: char, x: f32, y: f
         }
     };
     tile.custom_size = Some(Vec2::splat(TILE_SIZE));
-
-    let tile_ent = commands
-        .spawn_bundle(SpriteSheetBundle {
-            sprite: tile,
-            texture_atlas: ascii.0.clone(),
-            transform: Transform {
-                translation: Vec3::new(TILE_SIZE * x, TILE_SIZE * y, 100.0),
-                ..Default::default()
-            },
-            ..Default::default()
-        })
-        .id();
-
-    match c {
-        '#' | 'W' => {
-            commands.entity(tile_ent).insert(TileCollider);
-        }
-        _ => {}
-    }
+    tile
 }

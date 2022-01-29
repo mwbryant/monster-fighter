@@ -18,16 +18,26 @@ pub fn spawn_sample_map(commands: Commands, ascii: Res<AsciiSheet>) {
 
 fn load_map(mut commands: Commands, ascii: Res<AsciiSheet>, path: &Path) {
     let input = File::open(path).expect("No map found");
+    let mut tiles = Vec::new();
+
     for (y, line) in BufReader::new(input).lines().enumerate() {
         if let Ok(line) = line {
             for (x, c) in line.chars().enumerate() {
-                parse_tile(&mut commands, &ascii, c, x as f32, -(y as f32));
+                tiles.push(parse_tile(&mut commands, &ascii, c, x as f32, -(y as f32)));
             }
         }
     }
+
+    commands
+        .spawn()
+        .insert(Name::new("Map"))
+        //Needs transforms for parent heirarchy system to work
+        .insert(Transform::default())
+        .insert(GlobalTransform::default())
+        .push_children(&tiles);
 }
 
-fn parse_tile(commands: &mut Commands, ascii: &AsciiSheet, c: char, x: f32, y: f32) {
+fn parse_tile(commands: &mut Commands, ascii: &AsciiSheet, c: char, x: f32, y: f32) -> Entity {
     let tile = sprite_lookup(c);
 
     let tile_ent = commands
@@ -48,6 +58,8 @@ fn parse_tile(commands: &mut Commands, ascii: &AsciiSheet, c: char, x: f32, y: f
         }
         _ => {}
     }
+
+    tile_ent
 }
 
 fn sprite_lookup(c: char) -> TextureAtlasSprite {

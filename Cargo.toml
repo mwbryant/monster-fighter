@@ -11,4 +11,5 @@ opt-level = 3
 
 [dependencies]
 bevy = { version = "0.6.0",  features = ["dynamic", "trace"] }
+bevy-inspector-egui = "0.7.0"
 

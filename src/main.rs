@@ -1,6 +1,8 @@
+use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy::render::camera::ScalingMode;
 use bevy::window::WindowMode;
+use bevy_inspector_egui::WorldInspectorPlugin;
 
 mod player;
 mod tilemap;
@@ -29,6 +31,9 @@ fn main() {
             ..Default::default()
         })
         .add_plugins(DefaultPlugins)
+        .add_plugin(WorldInspectorPlugin::new())
+        .add_plugin(LogDiagnosticsPlugin::default())
+        .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_startup_system_to_stage(StartupStage::PreStartup, load_ascii)
         .add_startup_system(spawn_camera)
         .add_startup_system(player::spawn_player)

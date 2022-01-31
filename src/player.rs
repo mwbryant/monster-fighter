@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy::sprite::collide_aabb::{collide, Collision};
 
-use crate::tilemap::TileCollider;
+use crate::tilemap::{Door, ExitEvent, TileCollider};
 use crate::{AsciiSheet, TILE_SIZE};
 
 #[derive(Component)]
@@ -31,19 +31,26 @@ pub fn basic_player_movement(
 
 pub fn wall_collision(
     mut player_query: Query<(&Player, &mut Transform)>,
-    wall_query: Query<(&TileCollider, &Transform), Without<Player>>,
+    wall_query: Query<(&TileCollider, &Transform, Option<&Door>), Without<Player>>,
+    mut exit_event: EventWriter<ExitEvent>,
     time: Res<Time>,
 ) {
     let (player, mut player_transform) = player_query.single_mut();
     let player_size_decrease = 0.95;
 
-    for (_, wall_trans) in wall_query.iter() {
+    for (_, wall_trans, door) in wall_query.iter() {
         let collision = collide(
             player_transform.translation,
             Vec2::splat(TILE_SIZE * player_size_decrease),
             wall_trans.translation,
             Vec2::splat(TILE_SIZE),
         );
+
+        if collision.is_some() && door.is_some() {
+            println!("EXIT");
+            let door = door.unwrap();
+            exit_event.send(ExitEvent(door.0.clone()));
+        }
 
         if let Some(collision) = collision {
             match collision {

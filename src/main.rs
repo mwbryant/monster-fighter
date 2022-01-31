@@ -1,3 +1,7 @@
+//I personally like the consistency of "field: value" more than removing the copy
+#![allow(clippy::redundant_field_names)]
+
+#[allow(unused_imports)]
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy::render::camera::ScalingMode;
@@ -8,7 +12,7 @@ mod player;
 mod tilemap;
 
 use player::Player;
-use tilemap::spawn_sample_map;
+use tilemap::{load_exit, spawn_sample_map, ExitEvent};
 
 pub const RESOLUTION: f32 = 16.0 / 9.0;
 pub const TILE_SIZE: f32 = 0.10;
@@ -32,13 +36,15 @@ fn main() {
         })
         .add_plugins(DefaultPlugins)
         .add_plugin(WorldInspectorPlugin::new())
-        .add_plugin(LogDiagnosticsPlugin::default())
-        .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        //.add_plugin(LogDiagnosticsPlugin::default())
+        //.add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_startup_system_to_stage(StartupStage::PreStartup, load_ascii)
+        .add_event::<ExitEvent>()
         .add_startup_system(spawn_camera)
         .add_startup_system(player::spawn_player)
         .add_startup_system(spawn_sample_map)
         .add_system(camera_follow)
+        .add_system(load_exit)
         .add_system(player::basic_player_movement.label("movement"))
         .add_system(player::wall_collision.after("movement"))
         .run();

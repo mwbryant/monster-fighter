@@ -1,4 +1,4 @@
-/assets/room.txt
+/assets/room.txt 5 4
 ###################
 #............GGGGG#
 #............GGGGG#

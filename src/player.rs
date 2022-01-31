@@ -47,9 +47,8 @@ pub fn wall_collision(
         );
 
         if collision.is_some() && door.is_some() {
-            println!("EXIT");
             let door = door.unwrap();
-            exit_event.send(ExitEvent(door.0.clone()));
+            exit_event.send(ExitEvent(door.clone()));
         }
 
         if let Some(collision) = collision {

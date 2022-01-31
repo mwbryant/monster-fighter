@@ -1,4 +1,4 @@
-/assets/map.txt
+/assets/map.txt 4 8 
 ###########
 #.@.......#
 #TTT......#

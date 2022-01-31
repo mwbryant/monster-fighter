@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
+use crate::player::Player;
 use crate::AsciiSheet;
 use crate::TILE_SIZE;
 
@@ -13,10 +14,14 @@ pub struct Tile;
 #[derive(Component)]
 pub struct Map;
 
-#[derive(Component)]
-pub struct Door(pub String);
+#[derive(Component, Clone)]
+pub struct Door {
+    pub path: String,
+    pub new_x: i32,
+    pub new_y: i32,
+}
 
-pub struct ExitEvent(pub String);
+pub struct ExitEvent(pub Door);
 
 #[derive(Component)]
 pub struct TileCollider;
@@ -29,12 +34,12 @@ pub fn load_exit(
     mut commands: Commands,
     ascii: Res<AsciiSheet>,
     map_query: Query<(Entity, &Map, &Children)>,
+    mut player_query: Query<(&mut Transform, &Player)>,
     mut exit_event: EventReader<ExitEvent>,
 ) {
     if let Some(event) = exit_event.iter().next() {
         //Unload current map
         if !map_query.is_empty() {
-            println!("CLEARING MAP");
             //Clear children first to prevent orphans
             let (entity, _, children) = map_query.single();
             for child in children.iter() {
@@ -42,7 +47,10 @@ pub fn load_exit(
             }
             commands.entity(entity).despawn();
         }
-        load_map(commands, ascii, Path::new(&event.0));
+        load_map(commands, ascii, Path::new(&event.0.path));
+        let (mut transform, _) = player_query.single_mut();
+        transform.translation.x = TILE_SIZE * event.0.new_x as f32;
+        transform.translation.y = -TILE_SIZE * event.0.new_y as f32;
     }
 }
 
@@ -83,10 +91,23 @@ fn load_map(mut commands: Commands, ascii: Res<AsciiSheet>, path: &Path) {
         .push_children(&tiles);
 }
 
-fn parse_comment(line: &str, exits: &mut VecDeque<String>) {
-    let path = line.chars().skip(1).collect();
+fn parse_comment(line: &str, exits: &mut VecDeque<Door>) {
+    let comment: String = line.chars().skip(1).collect();
+    let words: Vec<&str> = comment.split(' ').collect();
+
+    let path = words[0];
+    let x = words[1]
+        .parse::<i32>()
+        .expect("Bad comment formatting, no x coord");
+    let y = words[2]
+        .parse::<i32>()
+        .expect("Bad comment formatting, no y coord");
     //TODO check if path actually exists
-    exits.push_back(path);
+    exits.push_back(Door {
+        path: path.to_string(),
+        new_x: x,
+        new_y: y,
+    });
 }
 
 fn parse_tile(
@@ -95,7 +116,7 @@ fn parse_tile(
     c: char,
     x: f32,
     y: f32,
-    exits: &mut VecDeque<String>,
+    exits: &mut VecDeque<Door>,
 ) -> Entity {
     let tile = sprite_lookup(c);
 
@@ -118,11 +139,11 @@ fn parse_tile(
         'D' => {
             commands
                 .entity(tile_ent)
-                .insert(Door(
+                .insert(
                     exits
                         .pop_front()
                         .expect("More doors in map than listed scenes"),
-                ))
+                )
                 .insert(TileCollider);
         }
         _ => {}

@@ -21,6 +21,7 @@ pub struct Door {
     pub new_y: i32,
 }
 
+//TODO add direction from collision
 pub struct ExitEvent(pub Door);
 
 #[derive(Component)]

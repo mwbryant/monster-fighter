@@ -7,6 +7,7 @@ use crate::{AsciiSheet, TILE_SIZE};
 #[derive(Component)]
 pub struct Player {
     speed: f32,
+    hitbox_size: f32,
 }
 
 pub fn basic_player_movement(
@@ -29,27 +30,41 @@ pub fn basic_player_movement(
     }
 }
 
-pub fn wall_collision(
-    mut player_query: Query<(&Player, &mut Transform)>,
-    wall_query: Query<(&TileCollider, &Transform, Option<&Door>), Without<Player>>,
+pub fn door_collision(
+    player_query: Query<(&Player, &Transform)>,
+    wall_query: Query<(&Transform, &Door), Without<Player>>,
     mut exit_event: EventWriter<ExitEvent>,
-    time: Res<Time>,
 ) {
-    let (player, mut player_transform) = player_query.single_mut();
-    let player_size_decrease = 0.95;
+    let (player, player_transform) = player_query.single();
 
-    for (_, wall_trans, door) in wall_query.iter() {
+    for (door_trans, door) in wall_query.iter() {
         let collision = collide(
             player_transform.translation,
-            Vec2::splat(TILE_SIZE * player_size_decrease),
-            wall_trans.translation,
+            Vec2::splat(TILE_SIZE * player.hitbox_size),
+            door_trans.translation,
             Vec2::splat(TILE_SIZE),
         );
 
-        if collision.is_some() && door.is_some() {
-            let door = door.unwrap();
+        if collision.is_some() {
             exit_event.send(ExitEvent(door.clone()));
         }
+    }
+}
+
+pub fn wall_collision(
+    mut player_query: Query<(&Player, &mut Transform)>,
+    wall_query: Query<&Transform, (Without<Player>, With<TileCollider>)>,
+    time: Res<Time>,
+) {
+    let (player, mut player_transform) = player_query.single_mut();
+
+    for wall_trans in wall_query.iter() {
+        let collision = collide(
+            player_transform.translation,
+            Vec2::splat(TILE_SIZE * player.hitbox_size),
+            wall_trans.translation,
+            Vec2::splat(TILE_SIZE),
+        );
 
         if let Some(collision) = collision {
             match collision {
@@ -86,7 +101,10 @@ pub fn spawn_player(mut commands: Commands, ascii: Res<AsciiSheet>) {
             ..Default::default()
         })
         .insert(Name::new("Player"))
-        .insert(Player { speed: 0.3 })
+        .insert(Player {
+            speed: 0.3,
+            hitbox_size: 0.95,
+        })
         .id();
 
     let mut background_sprite = TextureAtlasSprite::new(0);

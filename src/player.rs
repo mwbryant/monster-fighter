@@ -10,7 +10,18 @@ pub struct Player {
     hitbox_size: f32,
 }
 
-pub fn basic_player_movement(
+pub struct PlayerPlugin;
+
+impl Plugin for PlayerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_startup_system(spawn_player)
+            .add_system(basic_player_movement.label("movement"))
+            .add_system(wall_collision.after("movement"))
+            .add_system(door_collision.after("movement"));
+    }
+}
+
+fn basic_player_movement(
     keyboard: Res<Input<KeyCode>>,
     time: Res<Time>,
     mut player_query: Query<(&Player, &mut Transform)>,
@@ -30,7 +41,7 @@ pub fn basic_player_movement(
     }
 }
 
-pub fn door_collision(
+fn door_collision(
     player_query: Query<(&Player, &Transform)>,
     wall_query: Query<(&Transform, &Door), Without<Player>>,
     mut exit_event: EventWriter<ExitEvent>,
@@ -51,7 +62,7 @@ pub fn door_collision(
     }
 }
 
-pub fn wall_collision(
+fn wall_collision(
     mut player_query: Query<(&Player, &mut Transform)>,
     wall_query: Query<&Transform, (Without<Player>, With<TileCollider>)>,
     time: Res<Time>,

@@ -27,11 +27,21 @@ pub struct ExitEvent(pub Door);
 #[derive(Component)]
 pub struct TileCollider;
 
-pub fn spawn_sample_map(commands: Commands, ascii: Res<AsciiSheet>) {
+pub struct TileMapPlugin;
+
+impl Plugin for TileMapPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_event::<ExitEvent>()
+            .add_system(load_exit)
+            .add_startup_system(spawn_sample_map);
+    }
+}
+
+fn spawn_sample_map(commands: Commands, ascii: Res<AsciiSheet>) {
     load_map(commands, ascii, Path::new("assets/map.txt"));
 }
 
-pub fn load_exit(
+fn load_exit(
     mut commands: Commands,
     ascii: Res<AsciiSheet>,
     map_query: Query<(Entity, &Map, &Children)>,

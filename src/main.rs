@@ -11,8 +11,8 @@ use bevy_inspector_egui::WorldInspectorPlugin;
 mod player;
 mod tilemap;
 
-use player::Player;
-use tilemap::{load_exit, spawn_sample_map, ExitEvent};
+use player::{Player, PlayerPlugin};
+use tilemap::TileMapPlugin;
 
 pub const RESOLUTION: f32 = 16.0 / 9.0;
 pub const TILE_SIZE: f32 = 0.10;
@@ -36,18 +36,13 @@ fn main() {
         })
         .add_plugins(DefaultPlugins)
         .add_plugin(WorldInspectorPlugin::new())
-        //.add_plugin(LogDiagnosticsPlugin::default())
+        .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        .add_plugin(PlayerPlugin)
+        .add_plugin(TileMapPlugin)
         .add_startup_system_to_stage(StartupStage::PreStartup, load_ascii)
-        .add_event::<ExitEvent>()
-        .add_system(player::door_collision.after("movement"))
         .add_startup_system(spawn_camera)
-        .add_startup_system(player::spawn_player)
-        .add_startup_system(spawn_sample_map)
         .add_system(camera_follow)
-        .add_system(load_exit)
-        .add_system(player::basic_player_movement.label("movement"))
-        .add_system(player::wall_collision.after("movement"))
         .run();
 }
 

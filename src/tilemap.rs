@@ -49,6 +49,7 @@ fn load_exit(
     mut exit_event: EventReader<ExitEvent>,
 ) {
     if let Some(event) = exit_event.iter().next() {
+        println!("Loading: {}", event.0.path);
         //Unload current map
         if !map_query.is_empty() {
             //Clear children first to prevent orphans
@@ -148,14 +149,11 @@ fn parse_tile(
             commands.entity(tile_ent).insert(TileCollider);
         }
         'D' => {
-            commands
-                .entity(tile_ent)
-                .insert(
-                    exits
-                        .pop_front()
-                        .expect("More doors in map than listed scenes"),
-                )
-                .insert(TileCollider);
+            commands.entity(tile_ent).insert(
+                exits
+                    .pop_front()
+                    .expect("More doors in map than listed scenes"),
+            );
         }
         _ => {}
     }
@@ -191,12 +189,22 @@ fn sprite_lookup(c: char) -> TextureAtlasSprite {
             sprite
         }
         'R' => {
-            let mut sprite = TextureAtlasSprite::new('#' as usize); // weird door sprite
+            let mut sprite = TextureAtlasSprite::new('#' as usize);
             sprite.color = Color::rgb(0.9, 0.2, 0.2);
             sprite
         }
+        'T' => {
+            let mut sprite = TextureAtlasSprite::new(15 * 16); // triple bar
+            sprite.color = Color::rgb(0.2, 0.2, 0.2);
+            sprite
+        }
+        '@' => {
+            let mut sprite = TextureAtlasSprite::new(2); // triple bar
+            sprite.color = Color::rgb(0.2, 0.2, 0.8);
+            sprite
+        }
         _ => {
-            let mut sprite = TextureAtlasSprite::new('X' as usize); // weird door sprite
+            let mut sprite = TextureAtlasSprite::new('X' as usize);
             sprite.color = Color::rgb(0.9, 0.0, 0.9);
             sprite
         }

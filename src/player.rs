@@ -16,8 +16,10 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(spawn_player)
             .add_system(basic_player_movement.label("movement"))
-            .add_system(wall_collision.after("movement"))
-            .add_system(door_collision.after("movement"));
+            //If the wall collision happens first it pushes the player away and the door never collides
+            //This is a race condition that very slightly changes gameplay
+            .add_system(wall_collision.label("movement1").after("movement"))
+            .add_system(door_collision.after("movement1"));
     }
 }
 
@@ -49,6 +51,7 @@ fn door_collision(
     let (player, player_transform) = player_query.single();
 
     for (door_trans, door) in wall_query.iter() {
+        //println!("Checking door");
         let collision = collide(
             player_transform.translation,
             Vec2::splat(TILE_SIZE * player.hitbox_size),

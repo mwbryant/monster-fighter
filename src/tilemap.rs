@@ -27,6 +27,10 @@ pub struct ExitEvent(pub Door);
 #[derive(Component)]
 pub struct TileCollider;
 
+#[derive(Component)]
+//TODO needs some stats
+pub struct WildSpawn;
+
 pub struct TileMapPlugin;
 
 impl Plugin for TileMapPlugin {
@@ -148,6 +152,9 @@ fn parse_tile(
         '#' | 'W' => {
             commands.entity(tile_ent).insert(TileCollider);
         }
+        'G' => {
+            commands.entity(tile_ent).insert(WildSpawn);
+        }
         'D' => {
             commands.entity(tile_ent).insert(
                 exits
@@ -179,12 +186,14 @@ fn sprite_lookup(c: char) -> TextureAtlasSprite {
             sprite
         }
         'D' => {
-            let mut sprite = TextureAtlasSprite::new(14 * 16 + 9); // weird door sprite
+            let door = 14 * 16 + 9;
+            let mut sprite = TextureAtlasSprite::new(door);
             sprite.color = Color::rgb(0.7, 0.4, 0.4);
             sprite
         }
         'G' => {
-            let mut sprite = TextureAtlasSprite::new(15 * 16 + 7); // weird door sprite
+            let squiggle = 15 * 16 + 7;
+            let mut sprite = TextureAtlasSprite::new(squiggle);
             sprite.color = Color::rgb(0.2, 0.9, 0.2);
             sprite
         }
@@ -194,12 +203,14 @@ fn sprite_lookup(c: char) -> TextureAtlasSprite {
             sprite
         }
         'T' => {
-            let mut sprite = TextureAtlasSprite::new(15 * 16); // triple bar
+            let triple_bar = 15 * 16;
+            let mut sprite = TextureAtlasSprite::new(triple_bar);
             sprite.color = Color::rgb(0.2, 0.2, 0.2);
             sprite
         }
         '@' => {
-            let mut sprite = TextureAtlasSprite::new(2); // triple bar
+            let human = 2;
+            let mut sprite = TextureAtlasSprite::new(human);
             sprite.color = Color::rgb(0.2, 0.2, 0.8);
             sprite
         }

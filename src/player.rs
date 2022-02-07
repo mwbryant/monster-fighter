@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy::sprite::collide_aabb::{collide, Collision};
 
-use crate::tilemap::{Door, ExitEvent, TileCollider};
+use crate::tilemap::{Door, ExitEvent, TileCollider, WildSpawn};
 use crate::{AsciiSheet, TILE_SIZE};
 
 #[derive(Component)]
@@ -19,7 +19,8 @@ impl Plugin for PlayerPlugin {
             //If the wall collision happens first it pushes the player away and the door never collides
             //This is a race condition that very slightly changes gameplay
             .add_system(wall_collision.label("movement1").after("movement"))
-            .add_system(door_collision.after("movement1"));
+            .add_system(door_collision.after("movement1"))
+            .add_system(grass_collision.after("movement"));
     }
 }
 
@@ -40,6 +41,28 @@ fn basic_player_movement(
     }
     if keyboard.pressed(KeyCode::S) {
         transform.translation.y -= player.speed * time.delta_seconds();
+    }
+}
+
+fn grass_collision(
+    player_query: Query<(&Player, &Transform)>,
+    wall_query: Query<(&Transform, &WildSpawn), Without<Player>>,
+    //spawn encounter event?
+) {
+    let (player, player_transform) = player_query.single();
+
+    for (spawn_transform, _) in wall_query.iter() {
+        //println!("Checking door");
+        let collision = collide(
+            player_transform.translation,
+            Vec2::splat(TILE_SIZE * player.hitbox_size),
+            spawn_transform.translation,
+            Vec2::splat(TILE_SIZE),
+        );
+
+        if collision.is_some() {
+            println!("Battle Start !");
+        }
     }
 }
 
@@ -80,20 +103,13 @@ fn wall_collision(
             Vec2::splat(TILE_SIZE),
         );
 
+        let kick_back = player.speed * time.delta_seconds();
         if let Some(collision) = collision {
             match collision {
-                Collision::Top => {
-                    player_transform.translation.y += player.speed * time.delta_seconds()
-                }
-                Collision::Bottom => {
-                    player_transform.translation.y -= player.speed * time.delta_seconds()
-                }
-                Collision::Left => {
-                    player_transform.translation.x -= player.speed * time.delta_seconds()
-                }
-                Collision::Right => {
-                    player_transform.translation.x += player.speed * time.delta_seconds()
-                }
+                Collision::Top => player_transform.translation.y += kick_back,
+                Collision::Bottom => player_transform.translation.y -= kick_back,
+                Collision::Left => player_transform.translation.x -= kick_back,
+                Collision::Right => player_transform.translation.x += kick_back,
             }
         }
     }

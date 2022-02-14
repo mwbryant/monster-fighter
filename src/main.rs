@@ -18,6 +18,13 @@ pub const RESOLUTION: f32 = 16.0 / 9.0;
 pub const TILE_SIZE: f32 = 0.10;
 pub const CLEAR: Color = Color::rgb(0.1, 0.1, 0.1);
 
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+enum GameState {
+    //Menu,
+    Overworld,
+    Combat,
+}
+
 #[derive(Component, Clone)]
 pub struct AsciiSheet(pub Handle<TextureAtlas>);
 
@@ -36,6 +43,7 @@ fn main() {
         })
         .add_plugins(DefaultPlugins)
         .add_plugin(WorldInspectorPlugin::new())
+        .add_state(GameState::Overworld)
         //.add_plugin(LogDiagnosticsPlugin::default())
         //.add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_plugin(TileMapPlugin)

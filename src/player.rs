@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use bevy::sprite::collide_aabb::{collide, Collision};
 
-use crate::tilemap::{Door, ExitEvent, TileCollider, WildSpawn};
-use crate::{AsciiSheet, TILE_SIZE};
+use crate::tilemap::{Door, ExitEvent, Tile, TileCollider, WildSpawn};
+use crate::{AsciiSheet, GameState, TILE_SIZE};
 
 #[derive(Component)]
 pub struct Player {
@@ -15,12 +15,16 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(spawn_player)
-            .add_system(basic_player_movement.label("movement"))
-            //If the wall collision happens first it pushes the player away and the door never collides
-            //This is a race condition that very slightly changes gameplay
-            .add_system(wall_collision.label("movement1").after("movement"))
-            .add_system(door_collision.after("movement1"))
-            .add_system(grass_collision.after("movement"));
+            .add_system_set(SystemSet::on_exit(GameState::Overworld).with_system(hide_player))
+            .add_system_set(
+                SystemSet::on_update(GameState::Overworld)
+                    .with_system(basic_player_movement.label("movement"))
+                    .with_system(wall_collision.after("movement"))
+                    //If the wall collision happens first it pushes the player away and the door never collides
+                    //This is a race condition that very slightly changes gameplay
+                    .with_system(door_collision.after("movement"))
+                    .with_system(grass_collision.after("movement")),
+            );
     }
 }
 
@@ -47,7 +51,7 @@ fn basic_player_movement(
 fn grass_collision(
     player_query: Query<(&Player, &Transform)>,
     wall_query: Query<(&Transform, &WildSpawn), Without<Player>>,
-    //spawn encounter event?
+    mut state: ResMut<State<GameState>>,
 ) {
     let (player, player_transform) = player_query.single();
 
@@ -62,6 +66,23 @@ fn grass_collision(
 
         if collision.is_some() {
             println!("Battle Start !");
+            state
+                .set(GameState::Combat)
+                .expect("Failed to change state");
+            break;
+        }
+    }
+}
+
+fn hide_player(
+    mut player_query: Query<(&Children, &Player, &mut Visibility)>,
+    mut child_query: Query<(&mut Visibility, Without<Player>)>,
+) {
+    let (children, _, mut visibility) = player_query.single_mut();
+    visibility.is_visible = false;
+    for child in children.iter() {
+        if let Ok((mut child_visibility, _)) = child_query.get_mut(*child) {
+            child_visibility.is_visible = false;
         }
     }
 }
@@ -120,7 +141,11 @@ pub fn spawn_player(mut commands: Commands, ascii: Res<AsciiSheet>) {
     sprite.custom_size = Some(Vec2::splat(TILE_SIZE));
     sprite.color = Color::rgb(0.3, 0.3, 0.9);
 
-    let player = commands
+    let mut background_sprite = TextureAtlasSprite::new(0);
+    background_sprite.custom_size = Some(Vec2::splat(TILE_SIZE));
+    background_sprite.color = Color::rgb(0.5, 0.5, 0.5);
+
+    commands
         .spawn_bundle(SpriteSheetBundle {
             sprite: sprite,
             texture_atlas: ascii.0.clone(),
@@ -135,23 +160,18 @@ pub fn spawn_player(mut commands: Commands, ascii: Res<AsciiSheet>) {
             speed: 0.3,
             hitbox_size: 0.95,
         })
-        .id();
-
-    let mut background_sprite = TextureAtlasSprite::new(0);
-    background_sprite.custom_size = Some(Vec2::splat(TILE_SIZE));
-    background_sprite.color = Color::rgb(0.5, 0.5, 0.5);
-
-    let background = commands
-        .spawn_bundle(SpriteSheetBundle {
-            sprite: background_sprite,
-            texture_atlas: ascii.0.clone(),
-            transform: Transform {
-                translation: Vec3::new(0.0, 0.0, -1.0),
+        //XXX is this more readable than breaking them up...
+        //hmmm
+        .with_children(|parent| {
+            //Background sprite
+            parent.spawn_bundle(SpriteSheetBundle {
+                sprite: background_sprite,
+                texture_atlas: ascii.0.clone(),
+                transform: Transform {
+                    translation: Vec3::new(0.0, 0.0, -1.0),
+                    ..Default::default()
+                },
                 ..Default::default()
-            },
-            ..Default::default()
-        })
-        .id();
-
-    commands.entity(player).push_children(&[background]);
+            });
+        });
 }

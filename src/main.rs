@@ -8,10 +8,12 @@ use bevy::render::camera::ScalingMode;
 use bevy::window::WindowMode;
 use bevy_inspector_egui::WorldInspectorPlugin;
 
+mod combat;
 mod player;
 mod tilemap;
 
-use player::{Player, PlayerPlugin};
+use combat::CombatPlugin;
+use player::PlayerPlugin;
 use tilemap::TileMapPlugin;
 
 pub const RESOLUTION: f32 = 16.0 / 9.0;
@@ -48,9 +50,9 @@ fn main() {
         //.add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_plugin(TileMapPlugin)
         .add_plugin(PlayerPlugin)
+        .add_plugin(CombatPlugin)
         .add_startup_system_to_stage(StartupStage::PreStartup, load_ascii)
         .add_startup_system(spawn_camera)
-        .add_system(camera_follow)
         .run();
 }
 
@@ -79,15 +81,4 @@ fn spawn_camera(mut commands: Commands) {
     camera.orthographic_projection.right = 1.0 * RESOLUTION;
     camera.orthographic_projection.left = -1.0 * RESOLUTION;
     commands.spawn_bundle(camera);
-}
-
-fn camera_follow(
-    mut camera_query: Query<(&Camera, &mut Transform), Without<Player>>,
-    player_query: Query<(&Player, &Transform)>,
-) {
-    let (_, mut cam_transform) = camera_query.single_mut();
-    let (_, player_transform) = player_query.single();
-
-    cam_transform.translation.x = player_transform.translation.x;
-    cam_transform.translation.y = player_transform.translation.y;
 }

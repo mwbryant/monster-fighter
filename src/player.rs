@@ -20,23 +20,15 @@ impl Plugin for PlayerPlugin {
                 SystemSet::on_update(GameState::Overworld)
                     .with_system(basic_player_movement.label("movement"))
                     .with_system(door_collision.after("movement"))
-                    .with_system(grass_collision.after("movement")),
+                    .with_system(grass_collision.after("movement"))
+                    .with_system(camera_follow),
             )
-            .add_system_set(SystemSet::on_update(GameState::Combat).with_system(exit_combat))
             .add_system_set(
                 SystemSet::on_enter(GameState::Overworld)
                     .with_system(show_player)
                     .with_system(reset_input),
             )
             .add_system_set(SystemSet::on_exit(GameState::Overworld).with_system(hide_player));
-    }
-}
-fn exit_combat(keyboard: Res<Input<KeyCode>>, mut state: ResMut<State<GameState>>) {
-    if keyboard.just_pressed(KeyCode::Space) {
-        println!("Battle End !");
-        state
-            .set(GameState::Overworld)
-            .expect("Failed to change state");
     }
 }
 
@@ -225,4 +217,15 @@ pub fn spawn_player(mut commands: Commands, ascii: Res<AsciiSheet>) {
                 ..Default::default()
             });
         });
+}
+
+fn camera_follow(
+    mut camera_query: Query<&mut Transform, (With<Camera>, Without<Player>)>,
+    player_query: Query<(&Player, &Transform)>,
+) {
+    let mut cam_transform = camera_query.single_mut();
+    let (_, player_transform) = player_query.single();
+
+    cam_transform.translation.x = player_transform.translation.x;
+    cam_transform.translation.y = player_transform.translation.y;
 }

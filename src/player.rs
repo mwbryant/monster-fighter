@@ -1,13 +1,14 @@
 use bevy::prelude::*;
-use bevy::sprite::collide_aabb::{collide, Collision};
+use bevy::sprite::collide_aabb::collide;
 
-use crate::tilemap::{Door, ExitEvent, Tile, TileCollider, WildSpawn};
+use crate::tilemap::{Door, ExitEvent, TileCollider, WildSpawn};
 use crate::{AsciiSheet, GameState, TILE_SIZE};
 
 #[derive(Component)]
 pub struct Player {
     speed: f32,
     hitbox_size: f32,
+    just_moved: bool,
 }
 
 pub struct PlayerPlugin;
@@ -15,37 +16,99 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(spawn_player)
-            .add_system_set(SystemSet::on_exit(GameState::Overworld).with_system(hide_player))
             .add_system_set(
                 SystemSet::on_update(GameState::Overworld)
                     .with_system(basic_player_movement.label("movement"))
-                    .with_system(wall_collision.after("movement"))
-                    //If the wall collision happens first it pushes the player away and the door never collides
-                    //This is a race condition that very slightly changes gameplay
                     .with_system(door_collision.after("movement"))
                     .with_system(grass_collision.after("movement")),
-            );
+            )
+            .add_system_set(SystemSet::on_update(GameState::Combat).with_system(exit_combat))
+            .add_system_set(
+                SystemSet::on_enter(GameState::Overworld)
+                    .with_system(show_player)
+                    .with_system(reset_input),
+            )
+            .add_system_set(SystemSet::on_exit(GameState::Overworld).with_system(hide_player));
+    }
+}
+fn exit_combat(keyboard: Res<Input<KeyCode>>, mut state: ResMut<State<GameState>>) {
+    if keyboard.just_pressed(KeyCode::Space) {
+        println!("Battle End !");
+        state
+            .set(GameState::Overworld)
+            .expect("Failed to change state");
     }
 }
 
 fn basic_player_movement(
     keyboard: Res<Input<KeyCode>>,
     time: Res<Time>,
-    mut player_query: Query<(&Player, &mut Transform)>,
+    mut player_query: Query<(&mut Player, &mut Transform)>,
+    wall_query: Query<&Transform, (Without<Player>, With<TileCollider>)>,
 ) {
-    let (player, mut transform) = player_query.single_mut();
+    let (mut player, mut transform) = player_query.single_mut();
+    player.just_moved = false;
+
+    let to_move = player.speed * time.delta_seconds();
+
+    let mut target_x = 0.0;
     if keyboard.pressed(KeyCode::A) {
-        transform.translation.x -= player.speed * time.delta_seconds();
+        target_x = -to_move;
     }
     if keyboard.pressed(KeyCode::D) {
-        transform.translation.x += player.speed * time.delta_seconds();
+        target_x = to_move;
     }
+
+    let mut target_y = 0.0;
     if keyboard.pressed(KeyCode::W) {
-        transform.translation.y += player.speed * time.delta_seconds();
+        target_y = to_move;
     }
     if keyboard.pressed(KeyCode::S) {
-        transform.translation.y -= player.speed * time.delta_seconds();
+        target_y = -to_move;
     }
+
+    //Check if x movement is valid
+    let target = transform.translation + Vec3::new(target_x, 0.0, 0.0);
+    if wall_collision_check(target, &player, &wall_query) {
+        transform.translation = target;
+        if target_x != 0.0 {
+            player.just_moved = true;
+        }
+    }
+
+    //Check if y movement is valid
+    let target = transform.translation + Vec3::new(0.0, target_y, 0.0);
+    if wall_collision_check(target, &player, &wall_query) {
+        transform.translation = target;
+        if target_y != 0.0 {
+            player.just_moved = true;
+        }
+    }
+}
+
+//Hack : https://github.com/bevyengine/bevy/issues/1700#issuecomment-803356041
+// https://bevy-cheatbook.github.io/programming/states.html#with-input
+fn reset_input(mut keyboard_input: ResMut<Input<KeyCode>>) {
+    keyboard_input.clear();
+}
+
+fn wall_collision_check(
+    target_player_pos: Vec3,
+    player: &Player,
+    wall_query: &Query<&Transform, (Without<Player>, With<TileCollider>)>,
+) -> bool {
+    for wall_trans in wall_query.iter() {
+        let collision = collide(
+            target_player_pos,
+            Vec2::splat(TILE_SIZE * player.hitbox_size),
+            wall_trans.translation,
+            Vec2::splat(TILE_SIZE),
+        );
+        if collision.is_some() {
+            return false;
+        }
+    }
+    true
 }
 
 fn grass_collision(
@@ -54,6 +117,9 @@ fn grass_collision(
     mut state: ResMut<State<GameState>>,
 ) {
     let (player, player_transform) = player_query.single();
+    if !player.just_moved {
+        return;
+    }
 
     for (spawn_transform, _) in wall_query.iter() {
         //println!("Checking door");
@@ -75,14 +141,27 @@ fn grass_collision(
 }
 
 fn hide_player(
-    mut player_query: Query<(&Children, &Player, &mut Visibility)>,
-    mut child_query: Query<(&mut Visibility, Without<Player>)>,
+    mut player_query: Query<(&Children, &mut Visibility), With<Player>>,
+    mut child_query: Query<&mut Visibility, Without<Player>>,
 ) {
-    let (children, _, mut visibility) = player_query.single_mut();
+    let (children, mut visibility) = player_query.single_mut();
     visibility.is_visible = false;
     for child in children.iter() {
-        if let Ok((mut child_visibility, _)) = child_query.get_mut(*child) {
+        if let Ok(mut child_visibility) = child_query.get_mut(*child) {
             child_visibility.is_visible = false;
+        }
+    }
+}
+
+fn show_player(
+    mut player_query: Query<(&Children, &mut Visibility), With<Player>>,
+    mut child_query: Query<&mut Visibility, Without<Player>>,
+) {
+    let (children, mut visibility) = player_query.single_mut();
+    visibility.is_visible = true;
+    for child in children.iter() {
+        if let Ok(mut child_visibility) = child_query.get_mut(*child) {
+            child_visibility.is_visible = true;
         }
     }
 }
@@ -105,33 +184,6 @@ fn door_collision(
 
         if collision.is_some() {
             exit_event.send(ExitEvent(door.clone()));
-        }
-    }
-}
-
-fn wall_collision(
-    mut player_query: Query<(&Player, &mut Transform)>,
-    wall_query: Query<&Transform, (Without<Player>, With<TileCollider>)>,
-    time: Res<Time>,
-) {
-    let (player, mut player_transform) = player_query.single_mut();
-
-    for wall_trans in wall_query.iter() {
-        let collision = collide(
-            player_transform.translation,
-            Vec2::splat(TILE_SIZE * player.hitbox_size),
-            wall_trans.translation,
-            Vec2::splat(TILE_SIZE),
-        );
-
-        let kick_back = player.speed * time.delta_seconds();
-        if let Some(collision) = collision {
-            match collision {
-                Collision::Top => player_transform.translation.y += kick_back,
-                Collision::Bottom => player_transform.translation.y -= kick_back,
-                Collision::Left => player_transform.translation.x -= kick_back,
-                Collision::Right => player_transform.translation.x += kick_back,
-            }
         }
     }
 }
@@ -159,11 +211,10 @@ pub fn spawn_player(mut commands: Commands, ascii: Res<AsciiSheet>) {
         .insert(Player {
             speed: 0.3,
             hitbox_size: 0.95,
+            just_moved: false,
         })
-        //XXX is this more readable than breaking them up...
-        //hmmm
+        //Background sprite
         .with_children(|parent| {
-            //Background sprite
             parent.spawn_bundle(SpriteSheetBundle {
                 sprite: background_sprite,
                 texture_atlas: ascii.0.clone(),

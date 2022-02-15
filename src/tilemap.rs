@@ -5,8 +5,8 @@ use std::io::{BufRead, BufReader};
 use std::path::Path;
 
 use crate::player::Player;
-use crate::AsciiSheet;
 use crate::TILE_SIZE;
+use crate::{AsciiSheet, GameState};
 
 #[derive(Component)]
 pub struct Tile;
@@ -37,7 +37,27 @@ impl Plugin for TileMapPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<ExitEvent>()
             .add_system(load_exit)
-            .add_startup_system(spawn_sample_map);
+            .add_startup_system(spawn_sample_map)
+            .add_system_set(SystemSet::on_exit(GameState::Overworld).with_system(hide_map))
+            .add_system_set(SystemSet::on_enter(GameState::Overworld).with_system(show_map));
+    }
+}
+
+fn show_map(mut map_query: Query<&Children, With<Map>>, mut child_query: Query<&mut Visibility>) {
+    let children = map_query.single_mut();
+    for child in children.iter() {
+        if let Ok(mut child_visibility) = child_query.get_mut(*child) {
+            child_visibility.is_visible = true;
+        }
+    }
+}
+
+fn hide_map(mut map_query: Query<&Children, With<Map>>, mut child_query: Query<&mut Visibility>) {
+    let children = map_query.single_mut();
+    for child in children.iter() {
+        if let Ok(mut child_visibility) = child_query.get_mut(*child) {
+            child_visibility.is_visible = false;
+        }
     }
 }
 

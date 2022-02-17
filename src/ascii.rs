@@ -14,7 +14,7 @@ impl Plugin for AsciiPlugin {
 
 pub fn spawn_ascii_sprite(
     commands: &mut Commands,
-    ascii: &Res<AsciiSheet>,
+    ascii: &AsciiSheet,
     index: usize,
     color: Color,
     translation: Vec3,

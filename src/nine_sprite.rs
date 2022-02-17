@@ -8,11 +8,13 @@ pub struct NineSpritePlugin;
 impl Plugin for NineSpritePlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system_to_stage(StartupStage::PreStartup, setup_nine_sprite)
-            .add_startup_system(spawn_nine_sprite);
+            //.add_startup_system(spawn_simple_nine_sprite);
+            ;
     }
 }
 
-struct NineSpriteIndices {
+#[derive(Copy, Clone)]
+pub struct NineSpriteIndices {
     upper_left_index: usize,
     upper_right_index: usize,
     lower_left_index: usize,
@@ -33,66 +35,94 @@ fn setup_nine_sprite(mut commands: Commands) {
     });
 }
 
-fn spawn_nine_sprite(
+#[allow(dead_code)]
+fn spawn_simple_nine_sprite(
     mut commands: Commands,
     ascii: Res<AsciiSheet>,
     indices: Res<NineSpriteIndices>,
 ) {
-    let color = Color::rgb(0.3, 0.3, 0.9);
-    spawn_ascii_sprite(
+    spawn_nine_sprite(
         &mut commands,
+        ascii.clone(),
+        *indices,
+        Vec3::new(2.0 * TILE_SIZE, 2.0 * TILE_SIZE, 0.0),
+    );
+}
+
+#[derive(Component)]
+struct NineSprite;
+
+pub fn spawn_nine_sprite(
+    commands: &mut Commands,
+    ascii: AsciiSheet,
+    indices: NineSpriteIndices,
+    center: Vec3,
+) {
+    let color = Color::rgb(0.3, 0.3, 0.9);
+    let mut sprites = Vec::new();
+    sprites.push(spawn_ascii_sprite(
+        commands,
         &ascii,
         indices.upper_left_index,
         color,
-        Vec3::new(1.0 * TILE_SIZE, -2.0 * TILE_SIZE, 0.0),
-    );
-    spawn_ascii_sprite(
-        &mut commands,
+        center + Vec3::new(-1.0 * TILE_SIZE, 1.0 * TILE_SIZE, 0.0),
+    ));
+    sprites.push(spawn_ascii_sprite(
+        commands,
         &ascii,
         indices.vertical_index,
         color,
-        Vec3::new(1.0 * TILE_SIZE, -3.0 * TILE_SIZE, 0.0),
-    );
-    spawn_ascii_sprite(
-        &mut commands,
+        center + Vec3::new(-1.0 * TILE_SIZE, 0.0 * TILE_SIZE, 0.0),
+    ));
+    sprites.push(spawn_ascii_sprite(
+        commands,
         &ascii,
         indices.lower_left_index,
         color,
-        Vec3::new(1.0 * TILE_SIZE, -4.0 * TILE_SIZE, 0.0),
-    );
-    spawn_ascii_sprite(
-        &mut commands,
+        center + Vec3::new(-1.0 * TILE_SIZE, -1.0 * TILE_SIZE, 0.0),
+    ));
+    sprites.push(spawn_ascii_sprite(
+        commands,
         &ascii,
         indices.horizontal_index,
         color,
-        Vec3::new(2.0 * TILE_SIZE, -2.0 * TILE_SIZE, 0.0),
-    );
-    spawn_ascii_sprite(
-        &mut commands,
+        center + Vec3::new(0.0 * TILE_SIZE, -1.0 * TILE_SIZE, 0.0),
+    ));
+    sprites.push(spawn_ascii_sprite(
+        commands,
         &ascii,
         indices.horizontal_index,
         color,
-        Vec3::new(2.0 * TILE_SIZE, -4.0 * TILE_SIZE, 0.0),
-    );
-    spawn_ascii_sprite(
-        &mut commands,
+        center + Vec3::new(0.0 * TILE_SIZE, 1.0 * TILE_SIZE, 0.0),
+    ));
+    sprites.push(spawn_ascii_sprite(
+        commands,
         &ascii,
         indices.upper_right_index,
         color,
-        Vec3::new(3.0 * TILE_SIZE, -2.0 * TILE_SIZE, 0.0),
-    );
-    spawn_ascii_sprite(
-        &mut commands,
+        center + Vec3::new(1.0 * TILE_SIZE, 1.0 * TILE_SIZE, 0.0),
+    ));
+    sprites.push(spawn_ascii_sprite(
+        commands,
         &ascii,
         indices.vertical_index,
         color,
-        Vec3::new(3.0 * TILE_SIZE, -3.0 * TILE_SIZE, 0.0),
-    );
-    spawn_ascii_sprite(
-        &mut commands,
+        center + Vec3::new(1.0 * TILE_SIZE, -0.0 * TILE_SIZE, 0.0),
+    ));
+    sprites.push(spawn_ascii_sprite(
+        commands,
         &ascii,
         indices.lower_right_index,
         color,
-        Vec3::new(3.0 * TILE_SIZE, -4.0 * TILE_SIZE, 0.0),
-    );
+        center + Vec3::new(1.0 * TILE_SIZE, -1.0 * TILE_SIZE, 0.0),
+    ));
+
+    commands
+        .spawn()
+        .insert(NineSprite)
+        .insert(Name::new("NineSpriteBox"))
+        //Needs transforms for parent heirarchy system to work
+        .insert(Transform::default())
+        .insert(GlobalTransform::default())
+        .push_children(&sprites);
 }

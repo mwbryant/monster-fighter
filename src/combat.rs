@@ -1,4 +1,5 @@
-use crate::{AsciiSheet, GameState};
+use crate::nine_sprite::{spawn_nine_sprite, NineSpriteIndices};
+use crate::{AsciiSheet, GameState, TILE_SIZE};
 use bevy::prelude::*;
 
 pub struct CombatPlugin;
@@ -14,16 +15,31 @@ impl Plugin for CombatPlugin {
     }
 }
 
-fn enter_combat(mut commands: Commands, ascii: Res<AsciiSheet>) {
-    //commands.spawn_bundle(SpriteSheetBundle {
-    //sprite: sprite,
-    //texture_atlas: ascii.0.clone(),
-    //transform: Transform {
-    //translation: Vec3::new(12.0 * TILE_SIZE, -2.0 * TILE_SIZE, 900.0),
-    //..Default::default()
-    //},
-    //..Default::default()
-    //});
+fn enter_combat(mut commands: Commands, ascii: Res<AsciiSheet>, indices: Res<NineSpriteIndices>) {
+    spawn_nine_sprite(
+        &mut commands,
+        ascii.clone(),
+        *indices,
+        Vec3::new(4.0 * TILE_SIZE, -2.0 * TILE_SIZE, 0.0),
+    );
+    spawn_nine_sprite(
+        &mut commands,
+        ascii.clone(),
+        *indices,
+        Vec3::new(7.0 * TILE_SIZE, -2.0 * TILE_SIZE, 0.0),
+    );
+    spawn_nine_sprite(
+        &mut commands,
+        ascii.clone(),
+        *indices,
+        Vec3::new(4.0 * TILE_SIZE, -5.0 * TILE_SIZE, 0.0),
+    );
+    spawn_nine_sprite(
+        &mut commands,
+        ascii.clone(),
+        *indices,
+        Vec3::new(7.0 * TILE_SIZE, -5.0 * TILE_SIZE, 0.0),
+    );
 }
 
 fn exit_combat(keyboard: Res<Input<KeyCode>>, mut state: ResMut<State<GameState>>) {

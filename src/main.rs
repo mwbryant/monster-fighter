@@ -8,11 +8,15 @@ use bevy::render::camera::ScalingMode;
 use bevy::window::WindowMode;
 use bevy_inspector_egui::WorldInspectorPlugin;
 
+mod ascii;
 mod combat;
+mod nine_sprite;
 mod player;
 mod tilemap;
 
+use ascii::{AsciiPlugin, AsciiSheet};
 use combat::CombatPlugin;
+use nine_sprite::NineSpritePlugin;
 use player::PlayerPlugin;
 use tilemap::TileMapPlugin;
 
@@ -26,9 +30,6 @@ enum GameState {
     Overworld,
     Combat,
 }
-
-#[derive(Component, Clone)]
-pub struct AsciiSheet(pub Handle<TextureAtlas>);
 
 fn main() {
     let height = 900.0;
@@ -51,26 +52,10 @@ fn main() {
         .add_plugin(TileMapPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(CombatPlugin)
-        .add_startup_system_to_stage(StartupStage::PreStartup, load_ascii)
+        .add_plugin(NineSpritePlugin)
+        .add_plugin(AsciiPlugin)
         .add_startup_system(spawn_camera)
         .run();
-}
-
-fn load_ascii(
-    mut commands: Commands,
-    assets: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-) {
-    let texture_handle = assets.load("Ascii.png");
-    let texture_atlas = TextureAtlas::from_grid_with_padding(
-        texture_handle,
-        Vec2::splat(9.0),
-        16,
-        16,
-        Vec2::splat(2.0),
-    );
-    let atlas_handle = texture_atlases.add(texture_atlas);
-    commands.insert_resource(AsciiSheet(atlas_handle));
 }
 
 fn spawn_camera(mut commands: Commands) {

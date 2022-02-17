@@ -194,14 +194,14 @@ pub fn spawn_player(mut commands: Commands, ascii: Res<AsciiSheet>) {
             sprite: sprite,
             texture_atlas: ascii.0.clone(),
             transform: Transform {
-                translation: Vec3::new(2.0 * TILE_SIZE, -2.0 * TILE_SIZE, 900.0),
+                translation: Vec3::new(12.0 * TILE_SIZE, -2.0 * TILE_SIZE, 900.0),
                 ..Default::default()
             },
             ..Default::default()
         })
         .insert(Name::new("Player"))
         .insert(Player {
-            speed: 0.3,
+            speed: 0.6,
             hitbox_size: 0.95,
             just_moved: false,
         })

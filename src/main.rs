@@ -9,6 +9,7 @@ use bevy::window::WindowMode;
 use bevy_inspector_egui::WorldInspectorPlugin;
 
 mod ascii;
+mod ascii_text;
 mod combat;
 mod nine_sprite;
 mod player;

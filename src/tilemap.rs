@@ -91,11 +91,13 @@ fn load_map(mut commands: Commands, ascii: Res<AsciiSheet>, path: &Path) {
     let mut tiles = Vec::new();
     let mut exits = VecDeque::new();
 
+    let mut comment_counter = 0;
     for (y, line) in BufReader::new(input).lines().enumerate() {
         if let Ok(line) = line {
             for (x, c) in line.chars().enumerate() {
                 if c == '/' {
                     // comment
+                    comment_counter += 1;
                     parse_comment(&line, &mut exits);
                     break;
                 } else {
@@ -104,7 +106,7 @@ fn load_map(mut commands: Commands, ascii: Res<AsciiSheet>, path: &Path) {
                         &ascii,
                         c,
                         x as f32,
-                        -(y as f32),
+                        -(y as f32) + comment_counter as f32,
                         &mut exits,
                     ));
                 }

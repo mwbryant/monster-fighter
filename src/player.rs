@@ -1,10 +1,11 @@
 use bevy::prelude::*;
 use bevy::sprite::collide_aabb::collide;
+use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 use crate::tilemap::{Door, ExitEvent, TileCollider, WildSpawn};
 use crate::{AsciiSheet, GameState, TILE_SIZE};
 
-#[derive(Component)]
+#[derive(Component, Inspectable)]
 pub struct Player {
     speed: f32,
     hitbox_size: f32,
@@ -16,6 +17,7 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(spawn_player)
+            .register_inspectable::<Player>()
             .add_system_set(
                 SystemSet::on_update(GameState::Overworld)
                     .with_system(basic_player_movement.label("movement"))
@@ -41,7 +43,7 @@ fn basic_player_movement(
     let (mut player, mut transform) = player_query.single_mut();
     player.just_moved = false;
 
-    let to_move = player.speed * time.delta_seconds();
+    let to_move = player.speed * time.delta_seconds() * TILE_SIZE;
 
     let mut target_x = 0.0;
     if keyboard.pressed(KeyCode::A) {
@@ -201,8 +203,8 @@ pub fn spawn_player(mut commands: Commands, ascii: Res<AsciiSheet>) {
         })
         .insert(Name::new("Player"))
         .insert(Player {
-            speed: 0.6,
-            hitbox_size: 0.95,
+            speed: 6.0,
+            hitbox_size: 0.90,
             just_moved: false,
         })
         //Background sprite

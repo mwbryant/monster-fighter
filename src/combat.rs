@@ -3,6 +3,9 @@ use crate::nine_sprite::{spawn_nine_sprite, NineSpriteIndices};
 use crate::{AsciiSheet, GameState, RESOLUTION, TILE_SIZE};
 use bevy::prelude::*;
 
+#[derive(Component)]
+struct CombatMenu;
+
 pub struct CombatPlugin;
 
 impl Plugin for CombatPlugin {
@@ -12,7 +15,8 @@ impl Plugin for CombatPlugin {
                 SystemSet::on_enter(GameState::Combat)
                     .with_system(center_camera)
                     .with_system(create_combat_menu),
-            );
+            )
+            .add_system_set(SystemSet::on_exit(GameState::Combat).with_system(delete_combat_menu));
     }
 }
 
@@ -37,7 +41,7 @@ fn create_combat_menu(
         Vec3::new(right_offset, bottom_offset, 0.0),
     );
     let run_text = spawn_ascii_text(&mut commands, ascii.clone(), "Run", text_offset);
-    commands.get_or_spawn(run).add_child(run_text);
+    commands.entity(run).add_child(run_text);
     let item = spawn_nine_sprite(
         &mut commands,
         ascii.clone(),
@@ -47,7 +51,7 @@ fn create_combat_menu(
         Vec3::new(right_offset - box_width, bottom_offset, 0.0),
     );
     let item_text = spawn_ascii_text(&mut commands, ascii.clone(), "Item", text_offset);
-    commands.get_or_spawn(item).add_child(item_text);
+    commands.entity(item).add_child(item_text);
     let swap = spawn_nine_sprite(
         &mut commands,
         ascii.clone(),
@@ -57,7 +61,7 @@ fn create_combat_menu(
         Vec3::new(right_offset, bottom_offset + box_height, 0.0),
     );
     let swap_text = spawn_ascii_text(&mut commands, ascii.clone(), "Swap", text_offset);
-    commands.get_or_spawn(swap).add_child(swap_text);
+    commands.entity(swap).add_child(swap_text);
     let fight = spawn_nine_sprite(
         &mut commands,
         ascii.clone(),
@@ -67,7 +71,24 @@ fn create_combat_menu(
         Vec3::new(right_offset - box_width, bottom_offset + box_height, 0.0),
     );
     let fight_text = spawn_ascii_text(&mut commands, ascii.clone(), "Fight", text_offset);
-    commands.get_or_spawn(fight).add_child(fight_text);
+    commands.entity(fight).add_child(fight_text);
+
+    commands
+        .spawn()
+        .insert(Name::new("CombatMenu"))
+        .insert(CombatMenu)
+        //Needs transforms for parent heirarchy system to work
+        .insert(Transform {
+            ..Default::default()
+        })
+        .insert(GlobalTransform::default())
+        .push_children(&[fight, run, item, swap])
+        .id();
+}
+
+fn delete_combat_menu(mut commands: Commands, mut menu_query: Query<Entity, With<CombatMenu>>) {
+    let menu = menu_query.single_mut();
+    commands.entity(menu).despawn_recursive();
 }
 
 fn exit_combat(keyboard: Res<Input<KeyCode>>, mut state: ResMut<State<GameState>>) {

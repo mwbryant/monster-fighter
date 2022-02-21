@@ -68,7 +68,7 @@ fn spawn_sample_map(commands: Commands, ascii: Res<AsciiSheet>) {
 fn load_exit(
     mut commands: Commands,
     ascii: Res<AsciiSheet>,
-    map_query: Query<(Entity, &Map, &Children)>,
+    map_query: Query<Entity, With<Map>>,
     mut player_query: Query<(&mut Transform, &Player)>,
     mut exit_event: EventReader<ExitEvent>,
 ) {
@@ -76,12 +76,8 @@ fn load_exit(
         println!("Loading: {}", event.0.path);
         //Unload current map
         if !map_query.is_empty() {
-            //Clear children first to prevent orphans
-            let (entity, _, children) = map_query.single();
-            for child in children.iter() {
-                commands.entity(*child).despawn();
-            }
-            commands.entity(entity).despawn();
+            let map = map_query.single();
+            commands.entity(map).despawn_recursive();
         }
         load_map(commands, ascii, Path::new(&event.0.path));
         let (mut transform, _) = player_query.single_mut();

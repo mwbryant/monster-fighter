@@ -55,7 +55,15 @@ fn main() {
         .add_plugin(NineSpritePlugin)
         .add_plugin(AsciiPlugin)
         .add_startup_system(spawn_camera)
+        .add_system(frame_limiter)
         .run();
+}
+
+// Janky but keeps my laptop from hitting 400fps and using 100% cpu
+// https://github.com/bevyengine/bevy/issues/1343
+fn frame_limiter() {
+    use std::{thread, time};
+    thread::sleep(time::Duration::from_millis(10));
 }
 
 fn spawn_camera(mut commands: Commands) {

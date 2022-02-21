@@ -6,7 +6,7 @@ use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Inspectable)]
 enum CombatMenuType {
-    Fight,
+    Fight = 0,
     Swap,
     Item,
     Run,
@@ -35,10 +35,40 @@ impl Plugin for CombatPlugin {
                     .with_system(create_combat_menu),
             )
             .add_system_set(
-                SystemSet::on_update(GameState::Combat).with_system(highlight_selected_menu),
+                SystemSet::on_update(GameState::Combat)
+                    .with_system(highlight_selected_menu)
+                    .with_system(combat_menu_input),
             )
             .add_system_set(SystemSet::on_exit(GameState::Combat).with_system(delete_combat_menu));
     }
+}
+fn combat_menu_input(mut menu_query: Query<&mut CombatMenu>, keyboard: Res<Input<KeyCode>>) {
+    let mut menu = menu_query.single_mut();
+    let mut to_select = menu.selected.clone() as isize;
+
+    if keyboard.just_pressed(KeyCode::D) {
+        to_select += 1;
+    }
+    if keyboard.just_pressed(KeyCode::A) {
+        to_select -= 1;
+    }
+    if keyboard.just_pressed(KeyCode::W) {
+        to_select += 2;
+    }
+    if keyboard.just_pressed(KeyCode::S) {
+        to_select -= 2;
+    }
+
+    // add 4 to force positive outcome
+    to_select = (to_select + 4) % 4;
+
+    menu.selected = match to_select {
+        0 => CombatMenuType::Fight,
+        1 => CombatMenuType::Swap,
+        2 => CombatMenuType::Item,
+        3 => CombatMenuType::Run,
+        _ => unreachable!("Bad menu selection!"),
+    };
 }
 
 fn highlight_selected_menu(

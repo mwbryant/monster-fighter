@@ -8,7 +8,7 @@ pub struct NineSpritePlugin;
 impl Plugin for NineSpritePlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system_to_stage(StartupStage::PreStartup, setup_nine_sprite)
-            //.add_startup_system(spawn_simple_nine_sprite);
+        //        .add_startup_system(spawn_simple_nine_sprite);
             ;
     }
 }
@@ -45,6 +45,8 @@ fn spawn_simple_nine_sprite(
         &mut commands,
         ascii.clone(),
         *indices,
+        11.0 * TILE_SIZE,
+        8.0 * TILE_SIZE,
         Vec3::new(2.0 * TILE_SIZE, 2.0 * TILE_SIZE, 0.0),
     );
 }
@@ -56,65 +58,84 @@ pub fn spawn_nine_sprite(
     commands: &mut Commands,
     ascii: AsciiSheet,
     indices: NineSpriteIndices,
+    width: f32,
+    height: f32,
     center: Vec3,
-) {
+) -> Entity {
+    assert!(width >= 2.0 * TILE_SIZE);
+    assert!(height >= 2.0 * TILE_SIZE);
+
     let color = Color::rgb(0.3, 0.3, 0.9);
+
+    let left = -width / 2.0 + 0.5 * TILE_SIZE;
+    let right = width / 2.0 - 0.5 * TILE_SIZE;
+    let up = height / 2.0 - 0.5 * TILE_SIZE;
+    let down = -height / 2.0 + 0.5 * TILE_SIZE;
+
     let mut sprites = Vec::new();
     sprites.push(spawn_ascii_sprite(
         commands,
         &ascii,
         indices.upper_left_index,
         color,
-        center + Vec3::new(-1.0 * TILE_SIZE, 1.0 * TILE_SIZE, 0.0),
+        Vec3::new(left, up, 0.0),
+        Vec3::splat(1.0),
     ));
     sprites.push(spawn_ascii_sprite(
         commands,
         &ascii,
         indices.vertical_index,
         color,
-        center + Vec3::new(-1.0 * TILE_SIZE, 0.0 * TILE_SIZE, 0.0),
+        Vec3::new(left, 0.0, 0.0),
+        Vec3::new(1.0, height / TILE_SIZE - 2.0, 1.0),
     ));
     sprites.push(spawn_ascii_sprite(
         commands,
         &ascii,
         indices.lower_left_index,
         color,
-        center + Vec3::new(-1.0 * TILE_SIZE, -1.0 * TILE_SIZE, 0.0),
+        Vec3::new(left, down, 0.0),
+        Vec3::splat(1.0),
     ));
     sprites.push(spawn_ascii_sprite(
         commands,
         &ascii,
         indices.horizontal_index,
         color,
-        center + Vec3::new(0.0 * TILE_SIZE, -1.0 * TILE_SIZE, 0.0),
+        Vec3::new(0.0, down, 0.0),
+        Vec3::new(width / TILE_SIZE - 2.0, 1.0, 1.0),
     ));
     sprites.push(spawn_ascii_sprite(
         commands,
         &ascii,
         indices.horizontal_index,
         color,
-        center + Vec3::new(0.0 * TILE_SIZE, 1.0 * TILE_SIZE, 0.0),
+        Vec3::new(0.0, up, 0.0),
+        Vec3::new(width / TILE_SIZE - 2.0, 1.0, 1.0),
     ));
     sprites.push(spawn_ascii_sprite(
         commands,
         &ascii,
         indices.upper_right_index,
         color,
-        center + Vec3::new(1.0 * TILE_SIZE, 1.0 * TILE_SIZE, 0.0),
+        Vec3::new(right, up, 0.0),
+        Vec3::splat(1.0),
     ));
     sprites.push(spawn_ascii_sprite(
         commands,
         &ascii,
         indices.vertical_index,
         color,
-        center + Vec3::new(1.0 * TILE_SIZE, -0.0 * TILE_SIZE, 0.0),
+        Vec3::new(right, 0.0, 0.0),
+        Vec3::new(1.0, height / TILE_SIZE - 2.0, 1.0),
     ));
     sprites.push(spawn_ascii_sprite(
         commands,
         &ascii,
         indices.lower_right_index,
         color,
-        center + Vec3::new(1.0 * TILE_SIZE, -1.0 * TILE_SIZE, 0.0),
+        Vec3::new(right, down, 0.0),
+        Vec3::splat(1.0),
     ));
 
     commands
@@ -122,7 +143,11 @@ pub fn spawn_nine_sprite(
         .insert(NineSprite)
         .insert(Name::new("NineSpriteBox"))
         //Needs transforms for parent heirarchy system to work
-        .insert(Transform::default())
+        .insert(Transform {
+            translation: center,
+            ..Default::default()
+        })
         .insert(GlobalTransform::default())
-        .push_children(&sprites);
+        .push_children(&sprites)
+        .id()
 }

@@ -18,6 +18,7 @@ pub fn spawn_ascii_sprite(
     index: usize,
     color: Color,
     translation: Vec3,
+    scale: Vec3,
 ) -> Entity {
     let mut sprite = TextureAtlasSprite::new(index);
     sprite.custom_size = Some(Vec2::splat(TILE_SIZE));
@@ -29,6 +30,7 @@ pub fn spawn_ascii_sprite(
             texture_atlas: ascii.0.clone(),
             transform: Transform {
                 translation: translation,
+                scale: scale,
                 ..Default::default()
             },
             ..Default::default()

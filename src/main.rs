@@ -14,7 +14,7 @@ mod nine_sprite;
 mod player;
 mod tilemap;
 
-use ascii::{AsciiPlugin, AsciiSheet};
+use ascii::{spawn_ascii_sprite, AsciiPlugin, AsciiSheet};
 use combat::CombatPlugin;
 use nine_sprite::NineSpritePlugin;
 use player::PlayerPlugin;
@@ -55,8 +55,21 @@ fn main() {
         .add_plugin(NineSpritePlugin)
         .add_plugin(AsciiPlugin)
         .add_startup_system(spawn_camera)
+        //.add_startup_system(spawn_dummy_sprite)
         .add_system(frame_limiter)
         .run();
+}
+
+#[allow(dead_code)]
+fn spawn_dummy_sprite(mut commands: Commands, ascii: Res<AsciiSheet>) {
+    spawn_ascii_sprite(
+        &mut commands,
+        &*ascii,
+        1,
+        Color::RED,
+        Vec3::default(),
+        Vec3::splat(1.0),
+    );
 }
 
 // Janky but keeps my laptop from hitting 400fps and using 100% cpu

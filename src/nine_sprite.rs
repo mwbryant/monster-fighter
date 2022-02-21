@@ -47,12 +47,11 @@ fn spawn_simple_nine_sprite(
         *indices,
         11.0 * TILE_SIZE,
         8.0 * TILE_SIZE,
-        Vec3::new(2.0 * TILE_SIZE, 2.0 * TILE_SIZE, 0.0),
     );
 }
 
 #[derive(Component)]
-struct NineSprite;
+pub struct NineSprite;
 
 pub fn spawn_nine_sprite(
     commands: &mut Commands,
@@ -60,7 +59,6 @@ pub fn spawn_nine_sprite(
     indices: NineSpriteIndices,
     width: f32,
     height: f32,
-    center: Vec3,
 ) -> Entity {
     assert!(width >= 2.0 * TILE_SIZE);
     assert!(height >= 2.0 * TILE_SIZE);
@@ -143,10 +141,7 @@ pub fn spawn_nine_sprite(
         .insert(NineSprite)
         .insert(Name::new("NineSpriteBox"))
         //Needs transforms for parent heirarchy system to work
-        .insert(Transform {
-            translation: center,
-            ..Default::default()
-        })
+        .insert(Transform::default())
         .insert(GlobalTransform::default())
         .push_children(&sprites)
         .id()

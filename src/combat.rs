@@ -1,23 +1,102 @@
 use crate::ascii_text::spawn_ascii_text;
-use crate::nine_sprite::{spawn_nine_sprite, NineSpriteIndices};
+use crate::nine_sprite::{spawn_nine_sprite, NineSprite, NineSpriteIndices};
 use crate::{AsciiSheet, GameState, RESOLUTION, TILE_SIZE};
 use bevy::prelude::*;
+use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
-#[derive(Component)]
-struct CombatMenu;
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Inspectable)]
+enum CombatMenuType {
+    Fight,
+    Swap,
+    Item,
+    Run,
+}
+
+#[derive(Component, Inspectable)]
+struct CombatMenu {
+    selected: CombatMenuType,
+}
+
+#[derive(Component, Inspectable)]
+struct CombatMenuButton {
+    id: CombatMenuType,
+}
 
 pub struct CombatPlugin;
 
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(SystemSet::on_update(GameState::Combat).with_system(exit_combat))
+            .register_inspectable::<CombatMenuButton>()
+            .register_inspectable::<CombatMenu>()
             .add_system_set(
                 SystemSet::on_enter(GameState::Combat)
                     .with_system(center_camera)
                     .with_system(create_combat_menu),
             )
+            .add_system_set(
+                SystemSet::on_update(GameState::Combat).with_system(highlight_selected_menu),
+            )
             .add_system_set(SystemSet::on_exit(GameState::Combat).with_system(delete_combat_menu));
     }
+}
+
+fn highlight_selected_menu(
+    menu_query: Query<&CombatMenu>,
+    button_query: Query<(&CombatMenuButton, &Children)>,
+    nine_sprite_query: Query<(&NineSprite, &Children)>,
+    mut child_query: Query<&mut TextureAtlasSprite>,
+) {
+    //TODO this weird mess needs a lot of work...
+    //How to climb and bevy hierarchy more effectively and genericly
+    let menu = menu_query.single();
+
+    for (element, children) in button_query.iter() {
+        //Highlight this buttons nine sprite
+        for &button_child in children.iter() {
+            if let Ok((_, nine_sprite_children)) = nine_sprite_query.get(button_child) {
+                //Highlight all children of the nine sprite red
+                for &child in nine_sprite_children.iter() {
+                    if let Ok(mut child_sprite) = child_query.get_mut(child) {
+                        //Only highlight if id is the selected option
+                        if element.id == menu.selected {
+                            (*child_sprite).color = Color::RED;
+                        } else {
+                            (*child_sprite).color = Color::WHITE;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+fn create_combat_button(
+    commands: &mut Commands,
+    ascii: AsciiSheet,
+    indices: NineSpriteIndices,
+    translation: Vec3,
+    text: &str,
+    id: CombatMenuType,
+    box_width: f32,
+    box_height: f32,
+) -> Entity {
+    //XXX why -3 tiles
+    let text_offset = Vec3::new(-(box_width - 3.0 * TILE_SIZE) / 2.0, 0.0, 0.0);
+
+    let button = commands
+        .spawn()
+        .insert(Name::new(text.to_owned() + "Button"))
+        .insert(CombatMenuButton { id: id })
+        .insert(Transform {
+            translation: translation,
+            ..Default::default()
+        })
+        .insert(GlobalTransform::default())
+        .id();
+    let sprite = spawn_nine_sprite(commands, ascii.clone(), indices, box_width, box_height);
+    let text = spawn_ascii_text(commands, ascii.clone(), text, text_offset);
+    commands.entity(button).push_children(&[sprite, text]);
+    button
 }
 
 fn create_combat_menu(
@@ -29,58 +108,59 @@ fn create_combat_menu(
     let box_height = 3.0 * TILE_SIZE;
     let bottom_offset = -1.0 + box_height / 2.0;
     let right_offset = 1.0 * RESOLUTION - box_width / 2.0;
-    //XXX why -3 tiles
-    let text_offset = Vec3::new(-(box_width - 3.0 * TILE_SIZE) / 2.0, 0.0, 0.0);
 
-    let run = spawn_nine_sprite(
+    let run = create_combat_button(
         &mut commands,
         ascii.clone(),
         *indices,
-        box_width,
-        box_height,
         Vec3::new(right_offset, bottom_offset, 0.0),
+        "Run",
+        CombatMenuType::Run,
+        box_width,
+        box_height,
     );
-    let run_text = spawn_ascii_text(&mut commands, ascii.clone(), "Run", text_offset);
-    commands.entity(run).add_child(run_text);
-    let item = spawn_nine_sprite(
+
+    let item = create_combat_button(
         &mut commands,
         ascii.clone(),
         *indices,
-        box_width,
-        box_height,
         Vec3::new(right_offset - box_width, bottom_offset, 0.0),
+        "Item",
+        CombatMenuType::Item,
+        box_width,
+        box_height,
     );
-    let item_text = spawn_ascii_text(&mut commands, ascii.clone(), "Item", text_offset);
-    commands.entity(item).add_child(item_text);
-    let swap = spawn_nine_sprite(
+
+    let swap = create_combat_button(
         &mut commands,
         ascii.clone(),
         *indices,
-        box_width,
-        box_height,
         Vec3::new(right_offset, bottom_offset + box_height, 0.0),
+        "Swap",
+        CombatMenuType::Swap,
+        box_width,
+        box_height,
     );
-    let swap_text = spawn_ascii_text(&mut commands, ascii.clone(), "Swap", text_offset);
-    commands.entity(swap).add_child(swap_text);
-    let fight = spawn_nine_sprite(
+
+    let fight = create_combat_button(
         &mut commands,
         ascii.clone(),
         *indices,
+        Vec3::new(right_offset - box_width, bottom_offset + box_height, 0.0),
+        "Fight",
+        CombatMenuType::Fight,
         box_width,
         box_height,
-        Vec3::new(right_offset - box_width, bottom_offset + box_height, 0.0),
     );
-    let fight_text = spawn_ascii_text(&mut commands, ascii.clone(), "Fight", text_offset);
-    commands.entity(fight).add_child(fight_text);
 
     commands
         .spawn()
         .insert(Name::new("CombatMenu"))
-        .insert(CombatMenu)
-        //Needs transforms for parent heirarchy system to work
-        .insert(Transform {
-            ..Default::default()
+        .insert(CombatMenu {
+            selected: CombatMenuType::Fight,
         })
+        //Needs transforms for parent heirarchy system to work
+        .insert(Transform::default())
         .insert(GlobalTransform::default())
         .push_children(&[fight, run, item, swap])
         .id();

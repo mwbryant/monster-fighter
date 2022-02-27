@@ -3,6 +3,7 @@ use bevy::sprite::collide_aabb::collide;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
 use crate::ascii::spawn_ascii_sprite;
+use crate::debug::ENABLE_INSPECTOR;
 use crate::tilemap::{Door, ExitEvent, ScreenFade, TileCollider, WildSpawn};
 use crate::{AsciiSheet, GameState, TILE_SIZE};
 
@@ -19,7 +20,6 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(spawn_player)
-            .register_inspectable::<Player>()
             .add_system_set(
                 SystemSet::on_update(GameState::Overworld)
                     .with_system(basic_player_movement.label("movement"))
@@ -37,6 +37,9 @@ impl Plugin for PlayerPlugin {
                     .with_system(hide_player)
                     .with_system(reset_input),
             );
+        if ENABLE_INSPECTOR {
+            app.register_inspectable::<Player>();
+        }
     }
 }
 

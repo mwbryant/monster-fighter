@@ -6,17 +6,18 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy::render::camera::ScalingMode;
 use bevy::window::WindowMode;
-use bevy_inspector_egui::WorldInspectorPlugin;
 
 mod ascii;
 mod ascii_text;
 mod combat;
+mod debug;
 mod nine_sprite;
 mod player;
 mod tilemap;
 
 use ascii::{spawn_ascii_sprite, AsciiPlugin, AsciiSheet};
 use combat::CombatPlugin;
+use debug::DebugPlugin;
 use nine_sprite::NineSpritePlugin;
 use player::PlayerPlugin;
 use tilemap::TileMapPlugin;
@@ -34,6 +35,7 @@ enum GameState {
 
 fn main() {
     let height = 900.0;
+
     App::new()
         .insert_resource(ClearColor(CLEAR))
         .insert_resource(WindowDescriptor {
@@ -46,10 +48,10 @@ fn main() {
             ..Default::default()
         })
         .add_plugins(DefaultPlugins)
-        .add_plugin(WorldInspectorPlugin::new())
         .add_state(GameState::Overworld)
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        .add_plugin(DebugPlugin)
         .add_plugin(TileMapPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(CombatPlugin)

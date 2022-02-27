@@ -1,4 +1,5 @@
 use crate::ascii_text::spawn_ascii_text;
+use crate::debug::ENABLE_INSPECTOR;
 use crate::nine_sprite::{spawn_nine_sprite, NineSprite, NineSpriteIndices};
 use crate::{AsciiSheet, GameState, RESOLUTION, TILE_SIZE};
 use bevy::prelude::*;
@@ -28,8 +29,6 @@ pub struct CombatPlugin;
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(SystemSet::on_update(GameState::Combat))
-            .register_inspectable::<CombatMenuButton>()
-            .register_inspectable::<CombatMenu>()
             .add_system_set(
                 SystemSet::on_enter(GameState::Combat)
                     .with_system(center_camera)
@@ -41,6 +40,10 @@ impl Plugin for CombatPlugin {
                     .with_system(combat_menu_input),
             )
             .add_system_set(SystemSet::on_exit(GameState::Combat).with_system(delete_combat_menu));
+        if ENABLE_INSPECTOR {
+            app.register_inspectable::<CombatMenuButton>()
+                .register_inspectable::<CombatMenu>();
+        }
     }
 }
 

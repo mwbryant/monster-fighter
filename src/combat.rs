@@ -14,6 +14,7 @@ enum CombatMenuType {
 
 #[derive(Component, Inspectable)]
 struct CombatMenu {
+    active: bool,
     selected: CombatMenuType,
 }
 
@@ -26,7 +27,7 @@ pub struct CombatPlugin;
 
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_update(GameState::Combat).with_system(exit_combat))
+        app.add_system_set(SystemSet::on_update(GameState::Combat))
             .register_inspectable::<CombatMenuButton>()
             .register_inspectable::<CombatMenu>()
             .add_system_set(
@@ -42,9 +43,47 @@ impl Plugin for CombatPlugin {
             .add_system_set(SystemSet::on_exit(GameState::Combat).with_system(delete_combat_menu));
     }
 }
-fn combat_menu_input(mut menu_query: Query<&mut CombatMenu>, keyboard: Res<Input<KeyCode>>) {
-    let mut menu = menu_query.single_mut();
+
+fn combat_menu_input(
+    mut menu_query: Query<(&mut CombatMenu, &mut Transform)>,
+    mut state: ResMut<State<GameState>>,
+    keyboard: Res<Input<KeyCode>>,
+) {
+    let (mut menu, mut transform) = menu_query.single_mut();
+    if !menu.active {
+        if keyboard.just_pressed(KeyCode::Escape) {
+            //TODO handle swap and item menus
+            transform.translation.x = 0.0;
+            menu.active = true;
+        }
+        return;
+    }
+
     let mut to_select = menu.selected.clone() as isize;
+
+    if keyboard.just_pressed(KeyCode::Return) {
+        match menu.selected {
+            CombatMenuType::Fight => {
+                println!("Fight!");
+            }
+            CombatMenuType::Item => {
+                //Move menu ofTypeyyppeef screen when not in use
+                //No point to destroy and recreate
+                transform.translation.x = 1000.0;
+                menu.active = false;
+            }
+            CombatMenuType::Swap => {
+                transform.translation.x = 1000.0;
+                menu.active = false;
+            }
+            CombatMenuType::Run => {
+                println!("Battle End !");
+                state
+                    .set(GameState::Overworld)
+                    .expect("Failed to change state");
+            }
+        };
+    }
 
     if keyboard.just_pressed(KeyCode::D) {
         to_select += 1;
@@ -187,6 +226,7 @@ fn create_combat_menu(
         .spawn()
         .insert(Name::new("CombatMenu"))
         .insert(CombatMenu {
+            active: true,
             selected: CombatMenuType::Fight,
         })
         //Needs transforms for parent heirarchy system to work
@@ -199,15 +239,6 @@ fn create_combat_menu(
 fn delete_combat_menu(mut commands: Commands, mut menu_query: Query<Entity, With<CombatMenu>>) {
     let menu = menu_query.single_mut();
     commands.entity(menu).despawn_recursive();
-}
-
-fn exit_combat(keyboard: Res<Input<KeyCode>>, mut state: ResMut<State<GameState>>) {
-    if keyboard.just_pressed(KeyCode::Space) {
-        println!("Battle End !");
-        state
-            .set(GameState::Overworld)
-            .expect("Failed to change state");
-    }
 }
 
 fn center_camera(mut camera_query: Query<&mut Transform, With<Camera>>) {

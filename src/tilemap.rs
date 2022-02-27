@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -14,14 +15,24 @@ pub struct Tile;
 #[derive(Component)]
 pub struct Map;
 
-#[derive(Component, Clone)]
+#[derive(Component, Clone, Inspectable)]
 pub struct Door {
     pub path: String,
     pub new_x: i32,
     pub new_y: i32,
 }
 
+//TODO new takes time and door
+//FIXME timer should be seperate bundle
+#[derive(Component, Inspectable)]
+pub struct ScreenFade {
+    pub alpha: f32,
+    pub sent: bool,
+    pub exit_event: ExitEvent,
+}
+
 //TODO add direction from collision
+#[derive(Clone, Inspectable)]
 pub struct ExitEvent(pub Door);
 
 #[derive(Component)]
@@ -36,10 +47,40 @@ pub struct TileMapPlugin;
 impl Plugin for TileMapPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<ExitEvent>()
+            .register_inspectable::<ScreenFade>()
             .add_system(load_exit)
+            .add_system(exit_fade)
             .add_startup_system(spawn_sample_map)
             .add_system_set(SystemSet::on_exit(GameState::Overworld).with_system(hide_map))
             .add_system_set(SystemSet::on_enter(GameState::Overworld).with_system(show_map));
+    }
+}
+
+fn exit_fade(
+    mut fade_query: Query<(Entity, &mut ScreenFade, &mut Timer, &mut TextureAtlasSprite)>,
+    mut player_query: Query<&mut Player>,
+    time: Res<Time>,
+    mut exit_event: EventWriter<ExitEvent>,
+    mut commands: Commands,
+) {
+    let fade = fade_query.get_single_mut();
+    let mut player = player_query.single_mut();
+    if let Ok((entity, mut fade, mut timer, mut sprite)) = fade {
+        timer.tick(time.delta());
+        if timer.percent() < 0.5 {
+            fade.alpha = timer.percent() * 2.0;
+        } else {
+            if !fade.sent {
+                exit_event.send(fade.exit_event.clone());
+                fade.sent = true;
+            }
+            fade.alpha = timer.percent_left() * 2.0;
+        }
+        sprite.color.set_a(fade.alpha);
+        if timer.just_finished() {
+            player.active = true;
+            commands.entity(entity).despawn_recursive();
+        }
     }
 }
 

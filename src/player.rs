@@ -2,7 +2,8 @@ use bevy::prelude::*;
 use bevy::sprite::collide_aabb::collide;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
-use crate::tilemap::{Door, ExitEvent, TileCollider, WildSpawn};
+use crate::ascii::spawn_ascii_sprite;
+use crate::tilemap::{Door, ExitEvent, ScreenFade, TileCollider, WildSpawn};
 use crate::{AsciiSheet, GameState, TILE_SIZE};
 
 #[derive(Component, Inspectable)]
@@ -10,6 +11,7 @@ pub struct Player {
     speed: f32,
     hitbox_size: f32,
     just_moved: bool,
+    pub active: bool,
 }
 
 pub struct PlayerPlugin;
@@ -30,7 +32,11 @@ impl Plugin for PlayerPlugin {
                     .with_system(show_player)
                     .with_system(reset_input),
             )
-            .add_system_set(SystemSet::on_exit(GameState::Overworld).with_system(hide_player));
+            .add_system_set(
+                SystemSet::on_exit(GameState::Overworld)
+                    .with_system(hide_player)
+                    .with_system(reset_input),
+            );
     }
 }
 
@@ -41,6 +47,9 @@ fn basic_player_movement(
     wall_query: Query<&Transform, (Without<Player>, With<TileCollider>)>,
 ) {
     let (mut player, mut transform) = player_query.single_mut();
+    if !player.active {
+        return;
+    }
     player.just_moved = false;
 
     let to_move = player.speed * time.delta_seconds() * TILE_SIZE;
@@ -161,11 +170,15 @@ fn show_player(
 }
 
 fn door_collision(
-    player_query: Query<(&Player, &Transform)>,
+    mut player_query: Query<(&mut Player, &Transform)>,
     wall_query: Query<(&Transform, &Door), Without<Player>>,
-    mut exit_event: EventWriter<ExitEvent>,
+    mut commands: Commands,
+    ascii: Res<AsciiSheet>, //mut exit_event: EventWriter<ExitEvent>,
 ) {
-    let (player, player_transform) = player_query.single();
+    let (mut player, player_transform) = player_query.single_mut();
+    if !player.active {
+        return;
+    }
 
     for (door_trans, door) in wall_query.iter() {
         //println!("Checking door");
@@ -177,7 +190,24 @@ fn door_collision(
         );
 
         if collision.is_some() {
-            exit_event.send(ExitEvent(door.clone()));
+            player.active = false;
+            //exit_event.send(ExitEvent(door.clone()));
+            let screen_fade = spawn_ascii_sprite(
+                &mut commands,
+                &ascii,
+                0,
+                Color::rgba(0.0, 0.0, 0.0, 0.0),
+                Vec3::new(0.0, 0.0, 999.9),
+                Vec3::splat(100.0),
+            );
+            commands
+                .entity(screen_fade)
+                .insert(ScreenFade {
+                    alpha: 0.0,
+                    sent: false,
+                    exit_event: ExitEvent(door.clone()),
+                })
+                .insert(Timer::from_seconds(0.3, false));
         }
     }
 }
@@ -206,6 +236,7 @@ pub fn spawn_player(mut commands: Commands, ascii: Res<AsciiSheet>) {
             speed: 6.0,
             hitbox_size: 0.90,
             just_moved: false,
+            active: true,
         })
         //Background sprite
         .with_children(|parent| {

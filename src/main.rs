@@ -11,6 +11,7 @@ mod ascii;
 mod ascii_text;
 mod combat;
 mod debug;
+mod enemy;
 mod nine_sprite;
 mod player;
 mod tilemap;

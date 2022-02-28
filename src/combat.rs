@@ -1,6 +1,6 @@
-use crate::ascii::spawn_ascii_sprite;
 use crate::ascii_text::spawn_ascii_text;
 use crate::debug::ENABLE_INSPECTOR;
+use crate::enemy::{create_enemy, destroy_enemy, Enemy};
 use crate::nine_sprite::{spawn_nine_sprite, NineSprite, NineSpriteIndices};
 use crate::{AsciiSheet, GameState, RESOLUTION, TILE_SIZE};
 use bevy::prelude::*;
@@ -48,35 +48,15 @@ impl Plugin for CombatPlugin {
             );
         if ENABLE_INSPECTOR {
             app.register_inspectable::<CombatMenuButton>()
+                .register_inspectable::<Enemy>()
                 .register_inspectable::<CombatMenu>();
         }
     }
 }
 
-fn create_enemy(mut commands: Commands, ascii: Res<AsciiSheet>) {
-    let enemy = spawn_ascii_sprite(
-        &mut commands,
-        &ascii,
-        //FIXME find a better way to generate enemies pls
-        'y' as usize + 31,
-        Color::RED,
-        Vec3::new(0.0, 0.5, 1.0),
-        Vec3::splat(3.0),
-    );
-    commands.entity(enemy).insert(Enemy);
-}
-
-#[derive(Component)]
-struct Enemy;
-
-fn destroy_enemy(mut commands: Commands, enemy_query: Query<Entity, With<Enemy>>) {
-    for entity in enemy_query.iter() {
-        commands.entity(entity).despawn_recursive();
-    }
-}
-
 fn combat_menu_input(
     mut menu_query: Query<(&mut CombatMenu, &mut Transform)>,
+    mut enemy_query: Query<&mut Enemy>,
     mut state: ResMut<State<GameState>>,
     keyboard: Res<Input<KeyCode>>,
 ) {
@@ -95,7 +75,18 @@ fn combat_menu_input(
     if keyboard.just_pressed(KeyCode::Return) {
         match menu.selected {
             CombatMenuType::Fight => {
+                //TODO support multiple enemies
+                let mut enemy = enemy_query.single_mut();
                 println!("Fight!");
+                enemy.health -= 1;
+
+                if enemy.health <= 0 {
+                    //TODO exp
+                    println!("Win!");
+                    state
+                        .set(GameState::Overworld)
+                        .expect("Failed to change state");
+                }
             }
             CombatMenuType::Item => {
                 //Move menu ofTypeyyppeef screen when not in use

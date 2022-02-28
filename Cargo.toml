@@ -9,7 +9,24 @@ opt-level = 1
 [profile.dev.package."*"]
 opt-level = 3
 
+[dependencies.bevy]
+version = "0.6"
+default-features = false
+features = [
+  "dynamic", 
+  "trace",
+  "render",
+  "bevy_winit",
+  "bevy_gilrs",
+  "png",
+  "hdr",
+  "filesystem_watcher",
+  "x11"
+]
+
+[dependencies.bevy_kira_audio]
+version = "0.8.0"
+
 [dependencies]
-bevy = { version = "0.6.0",  features = ["dynamic", "trace"] }
 bevy-inspector-egui = "0.7.0"
-rand = "0.8.0" #Same version as bevy
+rand = "0.8.0" # Same version as bevy

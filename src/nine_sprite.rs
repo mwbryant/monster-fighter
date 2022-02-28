@@ -2,7 +2,6 @@ use crate::ascii::spawn_ascii_sprite;
 use crate::{AsciiSheet, TILE_SIZE};
 use bevy::prelude::*;
 
-//XXX all of this is gross, see if u can use a plugin
 pub struct NineSpritePlugin;
 
 impl Plugin for NineSpritePlugin {

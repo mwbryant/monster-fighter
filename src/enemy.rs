@@ -17,6 +17,7 @@ pub enum EnemyType {
 pub struct Enemy {
     enemy_type: EnemyType,
     sprite_index: usize,
+    color: Color,
     pub health: i64,
     exp: i64,
 }
@@ -28,32 +29,37 @@ fn get_random_enemy() -> Enemy {
     match rand {
         0 => Enemy {
             enemy_type: EnemyType::Bat,
-            sprite_index: 8 * 16,
+            sprite_index: 'b' as usize,
             health: 3,
+            color: Color::rgb(0.6, 0.6, 0.6),
             exp: 3,
         },
         1 => Enemy {
             enemy_type: EnemyType::Zombie,
-            sprite_index: 8 * 16 + 1,
+            sprite_index: 'Z' as usize,
             health: 5,
+            color: Color::rgb(0.6, 1.0, 0.6),
             exp: 7,
         },
         2 => Enemy {
             enemy_type: EnemyType::Ghost,
-            sprite_index: 8 * 16 + 5,
+            sprite_index: 'g' as usize,
             health: 6,
+            color: Color::rgb(0.9, 0.9, 0.9),
             exp: 7,
         },
         3 => Enemy {
             enemy_type: EnemyType::Demon,
-            sprite_index: 8 * 16 + 15,
+            sprite_index: 'D' as usize,
             health: 10,
+            color: Color::rgb(0.9, 0.2, 0.2),
             exp: 15,
         },
         4 => Enemy {
             enemy_type: EnemyType::Giant,
-            sprite_index: 9 * 16,
+            sprite_index: 'G' as usize,
             health: 20,
+            color: Color::rgb(0.1, 0.5, 0.1),
             exp: 45,
         },
         _ => {
@@ -69,7 +75,7 @@ pub fn create_enemy(mut commands: Commands, ascii: Res<AsciiSheet>) {
         &ascii,
         //FIXME find a better way to generate enemies pls
         enemy.sprite_index,
-        Color::RED,
+        enemy.color,
         Vec3::new(0.0, 0.5, 1.0),
         Vec3::splat(3.0),
     );

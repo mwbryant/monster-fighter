@@ -2,7 +2,6 @@
 #![allow(clippy::redundant_field_names)]
 
 #[allow(unused_imports)]
-use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::prelude::*;
 use bevy::render::camera::ScalingMode;
 use bevy::window::WindowMode;
@@ -50,8 +49,6 @@ fn main() {
         })
         .add_plugins(DefaultPlugins)
         .add_state(GameState::Overworld)
-        .add_plugin(LogDiagnosticsPlugin::default())
-        .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_plugin(DebugPlugin)
         .add_plugin(TileMapPlugin)
         .add_plugin(PlayerPlugin)

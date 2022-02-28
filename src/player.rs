@@ -1,6 +1,9 @@
+use bevy::utils::Duration;
+
 use bevy::prelude::*;
 use bevy::sprite::collide_aabb::collide;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
+use rand::{thread_rng, Rng};
 
 use crate::ascii::spawn_ascii_sprite;
 use crate::debug::ENABLE_INSPECTOR;
@@ -13,6 +16,14 @@ pub struct Player {
     hitbox_size: f32,
     just_moved: bool,
     pub active: bool,
+}
+
+#[derive(Component, Default, Reflect)]
+#[reflect(Component)]
+pub struct EncounterTracker {
+    timer: Timer,
+    min_time: f32,
+    max_time: f32,
 }
 
 pub struct PlayerPlugin;
@@ -38,7 +49,8 @@ impl Plugin for PlayerPlugin {
                     .with_system(reset_input),
             );
         if ENABLE_INSPECTOR {
-            app.register_inspectable::<Player>();
+            app.register_inspectable::<Player>()
+                .register_type::<EncounterTracker>();
         }
     }
 }
@@ -118,17 +130,17 @@ fn wall_collision_check(
 }
 
 fn grass_collision(
-    player_query: Query<(&Player, &Transform)>,
+    mut player_query: Query<(&Player, &mut EncounterTracker, &Transform)>,
     wall_query: Query<(&Transform, &WildSpawn), Without<Player>>,
+    time: Res<Time>,
     mut state: ResMut<State<GameState>>,
 ) {
-    let (player, player_transform) = player_query.single();
+    let (player, mut encounter, player_transform) = player_query.single_mut();
     if !player.just_moved {
         return;
     }
 
     for (spawn_transform, _) in wall_query.iter() {
-        //println!("Checking door");
         let collision = collide(
             player_transform.translation,
             Vec2::splat(TILE_SIZE * player.hitbox_size),
@@ -137,12 +149,23 @@ fn grass_collision(
         );
 
         if collision.is_some() {
-            println!("Battle Start !");
-            state
-                .set(GameState::Combat)
-                .expect("Failed to change state");
+            encounter.timer.tick(time.delta());
             break;
         }
+    }
+
+    if encounter.timer.just_finished() {
+        let mut rng = thread_rng();
+
+        // Exclusive range
+        let next_time: f32 = rng.gen_range(encounter.min_time..encounter.max_time);
+        encounter
+            .timer
+            .set_duration(Duration::from_secs_f32(next_time));
+        println!("Battle Start !");
+        state
+            .set(GameState::Combat)
+            .expect("Failed to change state");
     }
 }
 
@@ -240,6 +263,11 @@ pub fn spawn_player(mut commands: Commands, ascii: Res<AsciiSheet>) {
             hitbox_size: 0.90,
             just_moved: false,
             active: true,
+        })
+        .insert(EncounterTracker {
+            timer: Timer::from_seconds(1.0, true),
+            min_time: 0.5,
+            max_time: 2.5,
         })
         //Background sprite
         .with_children(|parent| {

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::WorldInspectorPlugin;
 //TODO how to do #define better or better yet remove on --release
-pub const ENABLE_INSPECTOR: bool = false;
+pub const ENABLE_INSPECTOR: bool = true;
 
 pub struct DebugPlugin;
 

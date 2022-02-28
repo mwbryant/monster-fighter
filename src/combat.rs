@@ -1,3 +1,4 @@
+use crate::ascii::spawn_ascii_sprite;
 use crate::ascii_text::spawn_ascii_text;
 use crate::debug::ENABLE_INSPECTOR;
 use crate::nine_sprite::{spawn_nine_sprite, NineSprite, NineSpriteIndices};
@@ -32,18 +33,45 @@ impl Plugin for CombatPlugin {
             .add_system_set(
                 SystemSet::on_enter(GameState::Combat)
                     .with_system(center_camera)
-                    .with_system(create_combat_menu),
+                    .with_system(create_combat_menu)
+                    .with_system(create_enemy),
             )
             .add_system_set(
                 SystemSet::on_update(GameState::Combat)
                     .with_system(highlight_selected_menu)
                     .with_system(combat_menu_input),
             )
-            .add_system_set(SystemSet::on_exit(GameState::Combat).with_system(delete_combat_menu));
+            .add_system_set(
+                SystemSet::on_exit(GameState::Combat)
+                    .with_system(delete_combat_menu)
+                    .with_system(destroy_enemy),
+            );
         if ENABLE_INSPECTOR {
             app.register_inspectable::<CombatMenuButton>()
                 .register_inspectable::<CombatMenu>();
         }
+    }
+}
+
+fn create_enemy(mut commands: Commands, ascii: Res<AsciiSheet>) {
+    let enemy = spawn_ascii_sprite(
+        &mut commands,
+        &ascii,
+        //FIXME find a better way to generate enemies pls
+        'y' as usize + 31,
+        Color::RED,
+        Vec3::new(0.0, 0.5, 1.0),
+        Vec3::splat(3.0),
+    );
+    commands.entity(enemy).insert(Enemy);
+}
+
+#[derive(Component)]
+struct Enemy;
+
+fn destroy_enemy(mut commands: Commands, enemy_query: Query<Entity, With<Enemy>>) {
+    for entity in enemy_query.iter() {
+        commands.entity(entity).despawn_recursive();
     }
 }
 

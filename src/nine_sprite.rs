@@ -64,13 +64,13 @@ pub fn spawn_nine_sprite(
     assert!(height >= 2.0 * TILE_SIZE);
 
     let color = Color::rgb(0.3, 0.3, 0.9);
+    let mut sprites = Vec::new();
 
     let left = -width / 2.0 + 0.5 * TILE_SIZE;
     let right = width / 2.0 - 0.5 * TILE_SIZE;
     let up = height / 2.0 - 0.5 * TILE_SIZE;
     let down = -height / 2.0 + 0.5 * TILE_SIZE;
 
-    let mut sprites = Vec::new();
     sprites.push(spawn_ascii_sprite(
         commands,
         &ascii,

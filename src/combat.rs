@@ -149,11 +149,10 @@ fn create_combat_button(
     translation: Vec3,
     text: &str,
     id: CombatMenuType,
-    box_width: f32,
-    box_height: f32,
+    size: Vec2,
 ) -> Entity {
     //XXX why -3 tiles
-    let text_offset = Vec3::new(-(box_width - 3.0 * TILE_SIZE) / 2.0, 0.0, 0.0);
+    let text_offset = Vec3::new(-(size.x - 3.0 * TILE_SIZE) / 2.0, 0.0, 0.0);
 
     let button = commands
         .spawn()
@@ -165,8 +164,8 @@ fn create_combat_button(
         })
         .insert(GlobalTransform::default())
         .id();
-    let sprite = spawn_nine_sprite(commands, ascii.clone(), indices, box_width, box_height);
-    let text = spawn_ascii_text(commands, ascii.clone(), text, text_offset);
+    let sprite = spawn_nine_sprite(commands, ascii.clone(), indices, size.x, size.y);
+    let text = spawn_ascii_text(commands, ascii, text, text_offset);
     commands.entity(button).push_children(&[sprite, text]);
     button
 }
@@ -188,8 +187,7 @@ fn create_combat_menu(
         Vec3::new(right_offset, bottom_offset, 0.0),
         "Run",
         CombatMenuType::Run,
-        box_width,
-        box_height,
+        Vec2::new(box_width, box_height),
     );
 
     let item = create_combat_button(
@@ -199,8 +197,7 @@ fn create_combat_menu(
         Vec3::new(right_offset - box_width, bottom_offset, 0.0),
         "Item",
         CombatMenuType::Item,
-        box_width,
-        box_height,
+        Vec2::new(box_width, box_height),
     );
 
     let swap = create_combat_button(
@@ -210,8 +207,7 @@ fn create_combat_menu(
         Vec3::new(right_offset, bottom_offset + box_height, 0.0),
         "Swap",
         CombatMenuType::Swap,
-        box_width,
-        box_height,
+        Vec2::new(box_width, box_height),
     );
 
     let fight = create_combat_button(
@@ -221,8 +217,7 @@ fn create_combat_menu(
         Vec3::new(right_offset - box_width, bottom_offset + box_height, 0.0),
         "Fight",
         CombatMenuType::Fight,
-        box_width,
-        box_height,
+        Vec2::new(box_width, box_height),
     );
 
     commands

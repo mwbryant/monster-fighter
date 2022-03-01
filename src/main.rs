@@ -13,6 +13,7 @@ mod debug;
 mod enemy;
 mod nine_sprite;
 mod player;
+mod screen_fadeout;
 mod tilemap;
 
 use ascii::{spawn_ascii_sprite, AsciiPlugin, AsciiSheet};

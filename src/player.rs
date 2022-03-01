@@ -7,8 +7,12 @@ use rand::{thread_rng, Rng};
 
 use crate::ascii::spawn_ascii_sprite;
 use crate::debug::ENABLE_INSPECTOR;
-use crate::tilemap::{Door, ExitEvent, ScreenFade, TileCollider, WildSpawn};
+use crate::screen_fadeout::{fadeout, ScreenFade};
+use crate::tilemap::{Door, ExitEvent, TileCollider, WildSpawn};
 use crate::{AsciiSheet, GameState, TILE_SIZE};
+
+#[derive(Clone, Inspectable)]
+pub struct CombatEvent;
 
 #[derive(Component, Inspectable)]
 pub struct Player {
@@ -31,6 +35,9 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(spawn_player)
+            .add_event::<CombatEvent>()
+            .add_system(fadeout::<CombatEvent>)
+            .add_system(start_combat)
             .add_system_set(
                 SystemSet::on_update(GameState::Overworld)
                     .with_system(basic_player_movement.label("movement"))
@@ -50,8 +57,17 @@ impl Plugin for PlayerPlugin {
             );
         if ENABLE_INSPECTOR {
             app.register_inspectable::<Player>()
+                .register_inspectable::<CombatEvent>()
                 .register_type::<EncounterTracker>();
         }
+    }
+}
+
+fn start_combat(mut combat_event: EventReader<CombatEvent>, mut state: ResMut<State<GameState>>) {
+    if let Some(_event) = combat_event.iter().next() {
+        state
+            .set(GameState::Combat)
+            .expect("Failed to change state");
     }
 }
 
@@ -62,10 +78,10 @@ fn basic_player_movement(
     wall_query: Query<&Transform, (Without<Player>, With<TileCollider>)>,
 ) {
     let (mut player, mut transform) = player_query.single_mut();
+    player.just_moved = false;
     if !player.active {
         return;
     }
-    player.just_moved = false;
 
     let to_move = player.speed * time.delta_seconds() * TILE_SIZE;
 
@@ -133,7 +149,8 @@ fn grass_collision(
     mut player_query: Query<(&Player, &mut EncounterTracker, &Transform)>,
     wall_query: Query<(&Transform, &WildSpawn), Without<Player>>,
     time: Res<Time>,
-    mut state: ResMut<State<GameState>>,
+    mut commands: Commands,
+    ascii: Res<AsciiSheet>, //mut exit_event: EventWriter<ExitEvent>,
 ) {
     let (player, mut encounter, player_transform) = player_query.single_mut();
     if !player.just_moved {
@@ -155,17 +172,30 @@ fn grass_collision(
     }
 
     if encounter.timer.just_finished() {
+        //Get random time for next spawn
         let mut rng = thread_rng();
-
-        // Exclusive range
         let next_time: f32 = rng.gen_range(encounter.min_time..encounter.max_time);
         encounter
             .timer
             .set_duration(Duration::from_secs_f32(next_time));
-        println!("Battle Start !");
-        state
-            .set(GameState::Combat)
-            .expect("Failed to change state");
+        //TODO setup screen fade constructor
+        let screen_fade = spawn_ascii_sprite(
+            &mut commands,
+            &ascii,
+            0,
+            Color::rgba(0.0, 0.0, 0.0, 0.0),
+            Vec3::new(0.0, 0.0, 999.9),
+            Vec3::splat(100.0),
+        );
+        commands
+            .entity(screen_fade)
+            .insert(ScreenFade {
+                alpha: 0.0,
+                sent: false,
+                event: CombatEvent,
+            })
+            .insert(Timer::from_seconds(0.3, false))
+            .insert(Name::new("Fadeout"));
     }
 }
 
@@ -217,7 +247,6 @@ fn door_collision(
 
         if collision.is_some() {
             player.active = false;
-            //exit_event.send(ExitEvent(door.clone()));
             let screen_fade = spawn_ascii_sprite(
                 &mut commands,
                 &ascii,
@@ -231,9 +260,10 @@ fn door_collision(
                 .insert(ScreenFade {
                     alpha: 0.0,
                     sent: false,
-                    exit_event: ExitEvent(door.clone()),
+                    event: ExitEvent(door.clone()),
                 })
-                .insert(Timer::from_seconds(0.3, false));
+                .insert(Timer::from_seconds(0.3, false))
+                .insert(Name::new("Fadeout"));
         }
     }
 }

@@ -5,9 +5,8 @@ use bevy::sprite::collide_aabb::collide;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use rand::{thread_rng, Rng};
 
-use crate::ascii::spawn_ascii_sprite;
 use crate::debug::ENABLE_INSPECTOR;
-use crate::screen_fadeout::{fadeout, ScreenFade};
+use crate::screen_fadeout::{create_fadeout, fadeout};
 use crate::tilemap::{Door, ExitEvent, TileCollider, WildSpawn};
 use crate::{AsciiSheet, GameState, TILE_SIZE};
 
@@ -178,24 +177,7 @@ fn grass_collision(
         encounter
             .timer
             .set_duration(Duration::from_secs_f32(next_time));
-        //TODO setup screen fade constructor
-        let screen_fade = spawn_ascii_sprite(
-            &mut commands,
-            &ascii,
-            0,
-            Color::rgba(0.0, 0.0, 0.0, 0.0),
-            Vec3::new(0.0, 0.0, 999.9),
-            Vec3::splat(100.0),
-        );
-        commands
-            .entity(screen_fade)
-            .insert(ScreenFade {
-                alpha: 0.0,
-                sent: false,
-                event: CombatEvent,
-            })
-            .insert(Timer::from_seconds(0.3, false))
-            .insert(Name::new("Fadeout"));
+        create_fadeout(&mut commands, ascii.clone(), CombatEvent, 0.3);
     }
 }
 
@@ -247,23 +229,7 @@ fn door_collision(
 
         if collision.is_some() {
             player.active = false;
-            let screen_fade = spawn_ascii_sprite(
-                &mut commands,
-                &ascii,
-                0,
-                Color::rgba(0.0, 0.0, 0.0, 0.0),
-                Vec3::new(0.0, 0.0, 999.9),
-                Vec3::splat(100.0),
-            );
-            commands
-                .entity(screen_fade)
-                .insert(ScreenFade {
-                    alpha: 0.0,
-                    sent: false,
-                    event: ExitEvent(door.clone()),
-                })
-                .insert(Timer::from_seconds(0.3, false))
-                .insert(Name::new("Fadeout"));
+            create_fadeout(&mut commands, ascii.clone(), ExitEvent(door.clone()), 0.3);
         }
     }
 }

@@ -1,0 +1,46 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'monster_fighter'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=monster_fighter",
+                    "--package=monster_fighter",
+                ],
+                "filter": {
+                    "name": "monster_fighter",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            //TODO cp assets to target/debug 
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'monster_fighter'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=monster_fighter",
+                    "--package=monster_fighter"
+                ],
+                "filter": {
+                    "name": "monster_fighter",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

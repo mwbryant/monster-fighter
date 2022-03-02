@@ -2,9 +2,10 @@ use crate::ascii_text::spawn_ascii_text;
 use crate::debug::ENABLE_INSPECTOR;
 use crate::enemy::{create_enemy, destroy_enemy, Enemy};
 use crate::nine_sprite::{spawn_nine_sprite, NineSprite, NineSpriteIndices};
-use crate::{AsciiSheet, GameState, RESOLUTION, TILE_SIZE};
+use crate::{AsciiSheet, AudioState, GameState, RESOLUTION, TILE_SIZE};
 use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
+use bevy_kira_audio::{Audio, PlaybackState};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Inspectable)]
 enum CombatMenuType {
@@ -20,6 +21,8 @@ struct CombatMenu {
     selected: CombatMenuType,
 }
 
+struct FightEvent;
+
 #[derive(Component, Inspectable)]
 struct CombatMenuButton {
     id: CombatMenuType,
@@ -30,6 +33,7 @@ pub struct CombatPlugin;
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(SystemSet::on_update(GameState::Combat))
+            .add_event::<FightEvent>()
             .add_system_set(
                 SystemSet::on_enter(GameState::Combat)
                     .with_system(center_camera)
@@ -39,7 +43,8 @@ impl Plugin for CombatPlugin {
             .add_system_set(
                 SystemSet::on_update(GameState::Combat)
                     .with_system(highlight_selected_menu)
-                    .with_system(combat_menu_input),
+                    .with_system(combat_menu_input)
+                    .with_system(fight),
             )
             .add_system_set(
                 SystemSet::on_exit(GameState::Combat)
@@ -54,11 +59,40 @@ impl Plugin for CombatPlugin {
     }
 }
 
+fn fight(
+    mut event: EventReader<FightEvent>,
+    mut enemy_query: Query<&mut Enemy>,
+    audio: Res<Audio>,
+    mut audio_state: ResMut<AudioState>,
+    mut state: ResMut<State<GameState>>,
+) {
+    if event.iter().next().is_none() {
+        return;
+    }
+    //TODO support multiple enemies
+    let mut enemy = enemy_query.single_mut();
+    enemy.health -= 1;
+    if audio_state.audio_loaded
+        && (audio_state.hit_instance == None
+            || audio.state(audio_state.hit_instance.clone().unwrap()) == PlaybackState::Stopped)
+    {
+        audio_state.hit_instance = Some(audio.play(audio_state.hit_handle.clone()));
+    }
+
+    if enemy.health <= 0 {
+        //TODO exp
+        println!("Win!");
+        state
+            .set(GameState::Overworld)
+            .expect("Failed to change state");
+    }
+}
+
 fn combat_menu_input(
     mut menu_query: Query<(&mut CombatMenu, &mut Transform)>,
-    mut enemy_query: Query<&mut Enemy>,
-    mut state: ResMut<State<GameState>>,
+    mut fight_event: EventWriter<FightEvent>,
     keyboard: Res<Input<KeyCode>>,
+    mut state: ResMut<State<GameState>>,
 ) {
     let (mut menu, mut transform) = menu_query.single_mut();
     if !menu.active {
@@ -75,18 +109,7 @@ fn combat_menu_input(
     if keyboard.just_pressed(KeyCode::Return) {
         match menu.selected {
             CombatMenuType::Fight => {
-                //TODO support multiple enemies
-                let mut enemy = enemy_query.single_mut();
-                println!("Fight!");
-                enemy.health -= 1;
-
-                if enemy.health <= 0 {
-                    //TODO exp
-                    println!("Win!");
-                    state
-                        .set(GameState::Overworld)
-                        .expect("Failed to change state");
-                }
+                fight_event.send(FightEvent);
             }
             CombatMenuType::Item => {
                 //Move menu ofTypeyyppeef screen when not in use

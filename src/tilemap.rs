@@ -42,7 +42,6 @@ impl Plugin for TileMapPlugin {
         app.add_event::<ExitEvent>()
             .add_system(load_exit)
             .add_system(fadeout::<ExitEvent>)
-            //After fadeout to prevent despawning and missing the timer end
             .add_startup_system(spawn_sample_map)
             .add_system_set(SystemSet::on_exit(GameState::Overworld).with_system(hide_map))
             .add_system_set(SystemSet::on_enter(GameState::Overworld).with_system(show_map));

@@ -26,6 +26,9 @@ features = [
 
 [dependencies.bevy_kira_audio]
 version = "0.8.0"
+features = [
+  "wav"
+]
 
 [dependencies]
 bevy-inspector-egui = "0.7.0"

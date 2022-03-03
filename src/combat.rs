@@ -1,4 +1,4 @@
-use crate::ascii_text::spawn_ascii_text;
+use crate::ascii::spawn_ascii_text;
 use crate::debug::ENABLE_INSPECTOR;
 use crate::enemy::{create_enemy, destroy_enemy, Enemy};
 use crate::nine_sprite::{spawn_nine_sprite, NineSprite, NineSpriteIndices};

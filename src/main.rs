@@ -8,7 +8,6 @@ use bevy::{asset::LoadState, render::camera::ScalingMode};
 use bevy_kira_audio::{Audio, AudioPlugin, AudioSource, InstanceHandle, PlaybackState};
 
 mod ascii;
-mod ascii_text;
 mod combat;
 mod debug;
 mod enemy;

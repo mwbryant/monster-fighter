@@ -1,7 +1,7 @@
 //I personally like the consistency of "field: value" more than removing the copy
 #![allow(clippy::redundant_field_names)]
 
-use audio::MyAudioPlugin;
+use audio::AudioManagerPlugin;
 #[allow(unused_imports)]
 use bevy::prelude::*;
 use bevy::render::camera::ScalingMode;
@@ -52,7 +52,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         //.add_system(play_single_sound)
         .add_state(GameState::Overworld)
-        .add_plugin(MyAudioPlugin)
+        .add_plugin(AudioManagerPlugin)
         .add_plugin(DebugPlugin)
         .add_plugin(TileMapPlugin)
         .add_plugin(PlayerPlugin)

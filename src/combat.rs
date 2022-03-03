@@ -1,5 +1,5 @@
 use crate::ascii::{spawn_ascii_text, update_ascii_text, AsciiText};
-use crate::audio::{play_single_sound, AudioState};
+use crate::audio::{play_single_sound, AudioState, Clips};
 use crate::debug::ENABLE_INSPECTOR;
 use crate::enemy::{create_enemy, destroy_enemy, Enemy, HEALTH_UI_ID};
 use crate::nine_sprite::{spawn_nine_sprite, NineSprite, NineSpriteIndices};
@@ -88,7 +88,7 @@ fn fight(
         }
     }
 
-    play_single_sound(audio, &mut audio_state.hit_clip);
+    play_single_sound(audio, &mut audio_state.clips.get_mut(&Clips::Hit).unwrap());
 
     if enemy.health <= 0 {
         //TODO exp

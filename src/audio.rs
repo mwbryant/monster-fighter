@@ -1,10 +1,10 @@
-use bevy::{asset::LoadState, prelude::*};
+use bevy::{asset::LoadState, prelude::*, utils::HashMap};
 use bevy_kira_audio::{Audio, AudioPlugin, AudioSource, InstanceHandle, PlaybackState};
 
 //FIXME bad name
-pub struct MyAudioPlugin;
+pub struct AudioManagerPlugin;
 
-impl Plugin for MyAudioPlugin {
+impl Plugin for AudioManagerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(AudioPlugin)
             .add_startup_system_to_stage(StartupStage::PreStartup, load_audio)
@@ -12,43 +12,52 @@ impl Plugin for MyAudioPlugin {
     }
 }
 
+//TODO is there a better key for the hashmap, it would be nice if plugins could add their own maybe
+//     or maybe its best to keep all audio file loading in one place
+#[derive(Hash, PartialEq, Eq)]
+pub enum Clips {
+    Hit,
+}
+
 pub struct AudioClip {
+    pub loaded: bool,
     pub handle: Handle<AudioSource>,
     instance: Option<InstanceHandle>,
 }
 
 pub struct AudioState {
-    pub audio_loaded: bool,
-    pub hit_clip: AudioClip,
+    pub clips: HashMap<Clips, AudioClip>,
 }
 
 fn check_audio_loading(mut audio_state: ResMut<AudioState>, asset_server: ResMut<AssetServer>) {
-    if audio_state.audio_loaded
-        || LoadState::Loaded != asset_server.get_load_state(&audio_state.hit_clip.handle)
-    {
-        return;
+    for (_, mut clip) in &mut audio_state.clips {
+        if !clip.loaded && asset_server.get_load_state(&clip.handle) == LoadState::Loaded {
+            clip.loaded = true;
+        }
     }
-    audio_state.audio_loaded = true;
 }
 
 fn load_audio(mut commands: Commands, asset_server: ResMut<AssetServer>) {
     let hit_handle = asset_server.load("hit.wav");
-    let audio_state = AudioState {
-        audio_loaded: false,
-        hit_clip: AudioClip {
+    let mut audio_state = AudioState {
+        clips: HashMap::default(),
+    };
+    audio_state.clips.insert(
+        Clips::Hit,
+        AudioClip {
+            loaded: false,
             handle: hit_handle,
             instance: None,
         },
-    };
+    );
     commands.insert_resource(audio_state);
 }
 
 #[allow(dead_code)]
 pub fn play_single_sound(audio: Res<Audio>, clip: &mut AudioClip) {
-    //TODO it would be nice to check for loaded audio...
-    //if !audio_state.audio_loaded {
-    //return;
-    //}
+    if !clip.loaded {
+        return;
+    }
     if clip.instance == None
         || audio.state(clip.instance.clone().unwrap()) == PlaybackState::Stopped
     {

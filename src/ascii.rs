@@ -4,6 +4,13 @@ use bevy::prelude::*;
 #[derive(Clone)]
 pub struct AsciiSheet(pub Handle<TextureAtlas>);
 
+#[derive(Component)]
+pub struct AsciiText {
+    //TODO: Magic value for identitfying which text is which, needs more api work
+    // 0 means dont care
+    pub id: usize,
+}
+
 pub struct AsciiPlugin;
 
 impl Plugin for AsciiPlugin {
@@ -55,16 +62,42 @@ fn load_ascii(
     commands.insert_resource(AsciiSheet(atlas_handle));
 }
 
-pub fn spawn_ascii_text(
+pub fn update_ascii_text(
     commands: &mut Commands,
+    to_update: (Entity, &Children),
     ascii: AsciiSheet,
     to_print: &str,
-    left_center: Vec3,
 ) -> Entity {
-    let color = Color::rgb(0.8, 0.8, 0.8);
+    //Clear existing text
+    let (entity, children) = to_update;
+    for child in children.iter() {
+        commands.entity(*child).despawn_recursive();
+    }
 
+    //Update existing entity with new children
+    //XXX does this make sense, would it be clearer to just delete and create a new entire string?
+    //    probably not because of posistioning but maybe if wrapping is a problem... hmmmm...
+    let sprites = create_text(commands, ascii, Color::GREEN, to_print);
+    let name = format!("Text - {}", to_print);
+
+    commands
+        .entity(entity)
+        .insert(Name::new(name))
+        .push_children(&sprites)
+        .id()
+}
+
+fn create_text(
+    commands: &mut Commands,
+    ascii: AsciiSheet,
+    color: Color,
+    to_print: &str,
+) -> Vec<Entity> {
     let mut sprites = Vec::new();
     for (i, char) in to_print.chars().enumerate() {
+        //https://doc.rust-lang.org/std/primitive.char.html#representation
+        //"char is always 4 bytes", spritesheet only has 256 images
+        assert!(char as usize <= 255);
         sprites.push(spawn_ascii_sprite(
             commands,
             &ascii,
@@ -74,9 +107,25 @@ pub fn spawn_ascii_text(
             Vec3::splat(1.0),
         ));
     }
+    sprites
+}
+
+pub fn spawn_ascii_text(
+    commands: &mut Commands,
+    ascii: AsciiSheet,
+    to_print: &str,
+    left_center: Vec3,
+    id: usize,
+) -> Entity {
+    let color = Color::rgb(0.8, 0.8, 0.8);
+
+    let sprites = create_text(commands, ascii, color, to_print);
+    let name = format!("Text - {}", to_print);
+
     commands
         .spawn()
-        .insert(Name::new("AsciiText"))
+        .insert(Name::new(name))
+        .insert(AsciiText { id })
         //Needs transforms for parent heirarchy system to work
         .insert(Transform {
             translation: left_center,

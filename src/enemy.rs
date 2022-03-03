@@ -2,9 +2,15 @@ use bevy::prelude::*;
 use bevy_inspector_egui::Inspectable;
 use rand::{thread_rng, Rng};
 
-use crate::ascii::{spawn_ascii_sprite, AsciiSheet};
+//FIXME this is a horrible 
+pub const HEALTH_UI_ID: usize = 2;
 
-#[derive(Inspectable)]
+use crate::{
+    ascii::{spawn_ascii_sprite, spawn_ascii_text, AsciiSheet},
+    TILE_SIZE,
+};
+
+#[derive(Inspectable, Copy, Clone)]
 pub enum EnemyType {
     Bat,
     Zombie,
@@ -13,7 +19,7 @@ pub enum EnemyType {
     Giant,
 }
 
-#[derive(Component, Inspectable)]
+#[derive(Component, Inspectable, Copy, Clone)]
 pub struct Enemy {
     enemy_type: EnemyType,
     sprite_index: usize,
@@ -70,7 +76,8 @@ fn get_random_enemy() -> Enemy {
 
 pub fn create_enemy(mut commands: Commands, ascii: Res<AsciiSheet>) {
     let enemy = get_random_enemy();
-    let entity = spawn_ascii_sprite(
+
+    let sprite = spawn_ascii_sprite(
         &mut commands,
         &ascii,
         //FIXME find a better way to generate enemies pls
@@ -79,10 +86,21 @@ pub fn create_enemy(mut commands: Commands, ascii: Res<AsciiSheet>) {
         Vec3::new(0.0, 0.5, 1.0),
         Vec3::splat(3.0),
     );
+    //TODO center
+    let health_bar = spawn_ascii_text(
+        &mut commands,
+        ascii.clone(),
+        &format!("Health: {}", enemy.health),
+        Vec3::new(-0.5, 1.0 - 2.0 * TILE_SIZE, 1.0),
+        HEALTH_UI_ID,
+    );
     commands
-        .entity(entity)
+        .spawn()
         .insert(enemy)
-        .insert(Name::new("Enemy"));
+        .insert(Name::new("Enemy"))
+        .insert(Transform::default())
+        .insert(GlobalTransform::default())
+        .push_children(&[sprite, health_bar]);
 }
 
 pub fn destroy_enemy(mut commands: Commands, enemy_query: Query<Entity, With<Enemy>>) {

@@ -1,6 +1,6 @@
-use crate::ascii::spawn_ascii_text;
+use crate::ascii::{spawn_ascii_text, update_ascii_text, AsciiText};
 use crate::debug::ENABLE_INSPECTOR;
-use crate::enemy::{create_enemy, destroy_enemy, Enemy};
+use crate::enemy::{create_enemy, destroy_enemy, Enemy, HEALTH_UI_ID};
 use crate::nine_sprite::{spawn_nine_sprite, NineSprite, NineSpriteIndices};
 use crate::{AsciiSheet, AudioState, GameState, RESOLUTION, TILE_SIZE};
 use bevy::prelude::*;
@@ -60,10 +60,13 @@ impl Plugin for CombatPlugin {
 }
 
 fn fight(
+    mut commands: Commands,
     mut event: EventReader<FightEvent>,
     mut enemy_query: Query<&mut Enemy>,
-    audio: Res<Audio>,
+    text_query: Query<(Entity, &Children, &AsciiText)>,
     mut audio_state: ResMut<AudioState>,
+    audio: Res<Audio>,
+    ascii: Res<AsciiSheet>,
     mut state: ResMut<State<GameState>>,
 ) {
     if event.iter().next().is_none() {
@@ -72,6 +75,17 @@ fn fight(
     //TODO support multiple enemies
     let mut enemy = enemy_query.single_mut();
     enemy.health -= 1;
+
+    for (text, text_children, id) in text_query.iter() {
+        if id.id == HEALTH_UI_ID {
+            update_ascii_text(
+                &mut commands,
+                (text, text_children),
+                ascii.clone(),
+                &format!("Health: {}", enemy.health),
+            );
+        }
+    }
     if audio_state.audio_loaded
         && (audio_state.hit_instance == None
             || audio.state(audio_state.hit_instance.clone().unwrap()) == PlaybackState::Stopped)
@@ -207,7 +221,7 @@ fn create_combat_button(
         .insert(GlobalTransform::default())
         .id();
     let sprite = spawn_nine_sprite(commands, ascii.clone(), indices, size.x, size.y);
-    let text = spawn_ascii_text(commands, ascii, text, text_offset);
+    let text = spawn_ascii_text(commands, ascii, text, text_offset, 0);
     commands.entity(button).push_children(&[sprite, text]);
     button
 }

@@ -1,11 +1,12 @@
 use crate::ascii::{spawn_ascii_text, update_ascii_text, AsciiText};
+use crate::audio::{play_single_sound, AudioState};
 use crate::debug::ENABLE_INSPECTOR;
 use crate::enemy::{create_enemy, destroy_enemy, Enemy, HEALTH_UI_ID};
 use crate::nine_sprite::{spawn_nine_sprite, NineSprite, NineSpriteIndices};
-use crate::{AsciiSheet, AudioState, GameState, RESOLUTION, TILE_SIZE};
+use crate::{AsciiSheet, GameState, RESOLUTION, TILE_SIZE};
 use bevy::prelude::*;
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
-use bevy_kira_audio::{Audio, PlaybackState};
+use bevy_kira_audio::Audio;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Inspectable)]
 enum CombatMenuType {
@@ -86,12 +87,8 @@ fn fight(
             );
         }
     }
-    if audio_state.audio_loaded
-        && (audio_state.hit_instance == None
-            || audio.state(audio_state.hit_instance.clone().unwrap()) == PlaybackState::Stopped)
-    {
-        audio_state.hit_instance = Some(audio.play(audio_state.hit_handle.clone()));
-    }
+
+    play_single_sound(audio, &mut audio_state.hit_clip);
 
     if enemy.health <= 0 {
         //TODO exp

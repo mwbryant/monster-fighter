@@ -1,13 +1,14 @@
 //I personally like the consistency of "field: value" more than removing the copy
 #![allow(clippy::redundant_field_names)]
 
+use audio::MyAudioPlugin;
 #[allow(unused_imports)]
 use bevy::prelude::*;
+use bevy::render::camera::ScalingMode;
 use bevy::window::WindowMode;
-use bevy::{asset::LoadState, render::camera::ScalingMode};
-use bevy_kira_audio::{Audio, AudioPlugin, AudioSource, InstanceHandle, PlaybackState};
 
 mod ascii;
+mod audio;
 mod combat;
 mod debug;
 mod enemy;
@@ -49,11 +50,9 @@ fn main() {
             ..Default::default()
         })
         .add_plugins(DefaultPlugins)
-        .add_plugin(AudioPlugin)
-        .add_startup_system(prepare_audio)
-        .add_system(check_audio_loading)
         //.add_system(play_single_sound)
         .add_state(GameState::Overworld)
+        .add_plugin(MyAudioPlugin)
         .add_plugin(DebugPlugin)
         .add_plugin(TileMapPlugin)
         .add_plugin(PlayerPlugin)
@@ -64,43 +63,6 @@ fn main() {
         //.add_startup_system(spawn_dummy_sprite)
         .add_system(frame_limiter)
         .run();
-}
-
-struct AudioState {
-    audio_loaded: bool,
-    hit_handle: Handle<AudioSource>,
-    hit_instance: Option<InstanceHandle>,
-}
-
-fn check_audio_loading(mut audio_state: ResMut<AudioState>, asset_server: ResMut<AssetServer>) {
-    if audio_state.audio_loaded
-        || LoadState::Loaded != asset_server.get_load_state(&audio_state.hit_handle)
-    {
-        return;
-    }
-    audio_state.audio_loaded = true;
-}
-
-fn prepare_audio(mut commands: Commands, asset_server: ResMut<AssetServer>) {
-    let hit_handle = asset_server.load("hit.wav");
-    let audio_state = AudioState {
-        audio_loaded: false,
-        hit_handle: hit_handle,
-        hit_instance: None,
-    };
-    commands.insert_resource(audio_state);
-}
-
-#[allow(dead_code)]
-fn play_single_sound(audio: Res<Audio>, mut audio_state: ResMut<AudioState>) {
-    if !audio_state.audio_loaded {
-        return;
-    }
-    if audio_state.hit_instance == None
-        || audio.state(audio_state.hit_instance.clone().unwrap()) == PlaybackState::Stopped
-    {
-        audio_state.hit_instance = Some(audio.play(audio_state.hit_handle.clone()));
-    }
 }
 
 #[allow(dead_code)]

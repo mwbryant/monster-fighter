@@ -171,6 +171,7 @@ fn grass_collision(
     }
 
     if encounter.timer.just_finished() {
+        encounter.timer.reset();
         //Get random time for next spawn
         let mut rng = thread_rng();
         let next_time: f32 = rng.gen_range(encounter.min_time..encounter.max_time);

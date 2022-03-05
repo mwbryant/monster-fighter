@@ -53,9 +53,8 @@ pub fn fadeout<T: 'static + std::marker::Send + std::marker::Sync + Clone>(
     time: Res<Time>,
     mut event: EventWriter<T>,
 ) {
-    let fade = fade_query.get_single_mut();
     let mut player = player_query.single_mut();
-    if let Ok((entity, mut fade, mut timer, mut sprite)) = fade {
+    for (entity, mut fade, mut timer, mut sprite) in fade_query.iter_mut() {
         player.active = false;
         timer.tick(time.delta());
 

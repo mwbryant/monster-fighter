@@ -8,6 +8,8 @@ impl Plugin for AudioManagerPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(AudioPlugin)
             .add_startup_system_to_stage(StartupStage::PreStartup, load_audio)
+            .add_system(temp_volume_control)
+            .add_system(set_audio_volume)
             .add_system(check_audio_loading);
     }
 }
@@ -27,6 +29,18 @@ pub struct AudioClip {
 
 pub struct AudioState {
     pub clips: HashMap<Clips, AudioClip>,
+    pub main_volume: f32,
+}
+
+fn temp_volume_control(mut audio_state: ResMut<AudioState>, keyboard: Res<Input<KeyCode>>) {
+    if keyboard.just_pressed(KeyCode::Up) {
+        audio_state.main_volume += 0.10;
+    }
+    if keyboard.just_pressed(KeyCode::Down) {
+        audio_state.main_volume -= 0.10;
+    }
+    //Behavior is weird outside of this range
+    audio_state.main_volume = audio_state.main_volume.clamp(0.0, 1.0);
 }
 
 fn check_audio_loading(mut audio_state: ResMut<AudioState>, asset_server: ResMut<AssetServer>) {
@@ -37,10 +51,16 @@ fn check_audio_loading(mut audio_state: ResMut<AudioState>, asset_server: ResMut
     }
 }
 
+//FIXME Probably can only be run when changes occur but eh
+fn set_audio_volume(audio: Res<Audio>, audio_state: Res<AudioState>) {
+    audio.set_volume(audio_state.main_volume);
+}
+
 fn load_audio(mut commands: Commands, asset_server: ResMut<AssetServer>) {
     let hit_handle = asset_server.load("hit.wav");
     let mut audio_state = AudioState {
         clips: HashMap::default(),
+        main_volume: 0.5,
     };
     audio_state.clips.insert(
         Clips::Hit,
@@ -50,6 +70,7 @@ fn load_audio(mut commands: Commands, asset_server: ResMut<AssetServer>) {
             instance: None,
         },
     );
+
     commands.insert_resource(audio_state);
 }
 

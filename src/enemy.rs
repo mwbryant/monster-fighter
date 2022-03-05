@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_inspector_egui::Inspectable;
 use rand::{thread_rng, Rng};
 
-//FIXME this is a horrible 
+//FIXME this is a horrible
 pub const HEALTH_UI_ID: usize = 2;
 
 use crate::{

@@ -25,11 +25,11 @@ features = [
 ]
 
 [dependencies.bevy_kira_audio]
-version = "0.8.0"
+version = "0.8"
 features = [
   "wav"
 ]
 
 [dependencies]
-bevy-inspector-egui = "0.7.0"
-rand = "0.8.0" # Same version as bevy
+bevy-inspector-egui = "0.7"
+rand = "0.8" # Same version as bevy

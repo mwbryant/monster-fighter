@@ -51,9 +51,10 @@ fn check_audio_loading(mut audio_state: ResMut<AudioState>, asset_server: ResMut
     }
 }
 
-//FIXME Probably can only be run when changes occur but eh
 fn set_audio_volume(audio: Res<Audio>, audio_state: Res<AudioState>) {
-    audio.set_volume(audio_state.main_volume);
+    if audio_state.is_changed() {
+        audio.set_volume(audio_state.main_volume);
+    }
 }
 
 fn load_audio(mut commands: Commands, asset_server: ResMut<AssetServer>) {

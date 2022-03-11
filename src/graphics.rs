@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::{Inspectable, RegisterInspectable};
+use bevy_inspector_egui::Inspectable;
 
 use crate::{debug::ENABLE_INSPECTOR, player::Player};
 

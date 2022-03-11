@@ -18,6 +18,7 @@ impl Plugin for GraphicsPlugin {
 
 pub struct GraphicsHandles {
     pub characters: Handle<TextureAtlas>,
+    pub tiles: Handle<TextureAtlas>,
 }
 
 #[derive(Component, Inspectable)]
@@ -50,10 +51,16 @@ fn load_graphics(
     let image = assets.load("characters.png");
     let atlas =
         TextureAtlas::from_grid_with_padding(image, Vec2::splat(16.0), 12, 9, Vec2::splat(1.0));
-    let atlas_handle = atlases.add(atlas);
+    let character_handle = atlases.add(atlas);
+
+    let image = assets.load("basictiles.png");
+    let atlas =
+        TextureAtlas::from_grid_with_padding(image, Vec2::splat(16.0), 8, 15, Vec2::splat(2.0));
+    let tile_handle = atlases.add(atlas);
 
     commands.insert_resource(GraphicsHandles {
-        characters: atlas_handle,
+        characters: character_handle,
+        tiles: tile_handle,
     });
 
     commands.insert_resource(PlayerAnimations {

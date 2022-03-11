@@ -42,6 +42,7 @@ fn main() {
 
     App::new()
         .insert_resource(ClearColor(CLEAR))
+        .insert_resource(Msaa { samples: 1 })
         .insert_resource(WindowDescriptor {
             width: height * RESOLUTION,
             height: height,

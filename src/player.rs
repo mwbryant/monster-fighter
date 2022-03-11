@@ -44,7 +44,7 @@ impl Plugin for PlayerPlugin {
                     .with_system(basic_player_movement.label("movement"))
                     .with_system(door_collision.after("movement"))
                     .with_system(grass_collision.after("movement"))
-                    .with_system(camera_follow),
+                    .with_system(camera_follow.after("movement")),
             )
             .add_system_set(
                 SystemSet::on_enter(GameState::Overworld)

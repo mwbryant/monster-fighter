@@ -6,10 +6,11 @@ use std::io::{BufRead, BufReader};
 use std::path::Path;
 
 use crate::debug::ENABLE_INSPECTOR;
+use crate::graphics::GraphicsHandles;
 use crate::player::Player;
 use crate::screen_fadeout::{fadeout, ScreenFade};
+use crate::GameState;
 use crate::TILE_SIZE;
-use crate::{AsciiSheet, GameState};
 
 #[derive(Component)]
 pub struct Tile;
@@ -69,13 +70,13 @@ fn hide_map(mut map_query: Query<&Children, With<Map>>, mut child_query: Query<&
     }
 }
 
-fn spawn_sample_map(commands: Commands, ascii: Res<AsciiSheet>) {
-    load_map(commands, ascii, Path::new("assets/map.txt"));
+fn spawn_sample_map(commands: Commands, graphics: Res<GraphicsHandles>) {
+    load_map(commands, graphics, Path::new("assets/map.txt"));
 }
 
 fn load_exit(
     mut commands: Commands,
-    ascii: Res<AsciiSheet>,
+    graphics: Res<GraphicsHandles>,
     map_query: Query<Entity, With<Map>>,
     mut player_query: Query<(&mut Transform, &Player)>,
     mut exit_event: EventReader<ExitEvent>,
@@ -87,14 +88,14 @@ fn load_exit(
             let map = map_query.single();
             commands.entity(map).despawn_recursive();
         }
-        load_map(commands, ascii, Path::new(&event.0.path));
+        load_map(commands, graphics, Path::new(&event.0.path));
         let (mut transform, _) = player_query.single_mut();
         transform.translation.x = TILE_SIZE * event.0.new_x as f32;
         transform.translation.y = -TILE_SIZE * event.0.new_y as f32;
     }
 }
 
-fn load_map(mut commands: Commands, ascii: Res<AsciiSheet>, path: &Path) {
+fn load_map(mut commands: Commands, graphics: Res<GraphicsHandles>, path: &Path) {
     let input = File::open(path).expect("No map found");
     let mut tiles = Vec::new();
     let mut exits = VecDeque::new();
@@ -111,7 +112,7 @@ fn load_map(mut commands: Commands, ascii: Res<AsciiSheet>, path: &Path) {
                 } else {
                     tiles.push(parse_tile(
                         &mut commands,
-                        &ascii,
+                        &graphics,
                         c,
                         x as f32,
                         -(y as f32) + comment_counter as f32,
@@ -154,7 +155,7 @@ fn parse_comment(line: &str, exits: &mut VecDeque<Door>) {
 
 fn parse_tile(
     commands: &mut Commands,
-    ascii: &AsciiSheet,
+    graphics: &GraphicsHandles,
     c: char,
     x: f32,
     y: f32,
@@ -165,7 +166,7 @@ fn parse_tile(
     let tile_ent = commands
         .spawn_bundle(SpriteSheetBundle {
             sprite: tile,
-            texture_atlas: ascii.0.clone(),
+            texture_atlas: graphics.tiles.clone(),
             transform: Transform {
                 translation: Vec3::new(TILE_SIZE * x, TILE_SIZE * y, 100.0),
                 ..Default::default()
@@ -197,52 +198,39 @@ fn parse_tile(
 fn sprite_lookup(c: char) -> TextureAtlasSprite {
     let mut tile = match c {
         '#' => {
-            let mut sprite = TextureAtlasSprite::new('#' as usize);
-            sprite.color = Color::rgb(0.8, 0.8, 0.8);
+            let mut sprite = TextureAtlasSprite::new(0);
             sprite
         }
         '.' => {
-            let mut sprite = TextureAtlasSprite::new('.' as usize);
-            sprite.color = Color::rgb(0.1, 0.1, 0.1);
+            let mut sprite = TextureAtlasSprite::new(11);
             sprite
         }
         'W' => {
-            let mut sprite = TextureAtlasSprite::new('#' as usize);
-            sprite.color = Color::rgb(0.7, 0.4, 0.1);
+            let mut sprite = TextureAtlasSprite::new(4);
             sprite
         }
         'D' => {
-            let door = 14 * 16 + 9;
-            let mut sprite = TextureAtlasSprite::new(door);
-            sprite.color = Color::rgb(0.7, 0.4, 0.4);
+            let mut sprite = TextureAtlasSprite::new(8 * 6);
             sprite
         }
         'G' => {
-            let squiggle = 15 * 16 + 7;
-            let mut sprite = TextureAtlasSprite::new(squiggle);
-            sprite.color = Color::rgb(0.2, 0.9, 0.2);
+            let mut sprite = TextureAtlasSprite::new(8 * 8 + 1);
             sprite
         }
         'R' => {
-            let mut sprite = TextureAtlasSprite::new('#' as usize);
-            sprite.color = Color::rgb(0.9, 0.2, 0.2);
+            let mut sprite = TextureAtlasSprite::new(8);
             sprite
         }
         'T' => {
-            let triple_bar = 15 * 16;
-            let mut sprite = TextureAtlasSprite::new(triple_bar);
-            sprite.color = Color::rgb(0.2, 0.2, 0.2);
+            let mut sprite = TextureAtlasSprite::new(11 * 8 + 1);
             sprite
         }
         '@' => {
-            let human = 2;
-            let mut sprite = TextureAtlasSprite::new(human);
-            sprite.color = Color::rgb(0.2, 0.2, 0.8);
+            let mut sprite = TextureAtlasSprite::new(9 * 8 + 5);
             sprite
         }
         _ => {
-            let mut sprite = TextureAtlasSprite::new('X' as usize);
-            sprite.color = Color::rgb(0.9, 0.0, 0.9);
+            let mut sprite = TextureAtlasSprite::new(8 * 4 + 5);
             sprite
         }
     };

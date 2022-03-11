@@ -12,6 +12,7 @@ mod audio;
 mod combat;
 mod debug;
 mod enemy;
+mod graphics;
 mod nine_sprite;
 mod player;
 mod screen_fadeout;
@@ -20,6 +21,7 @@ mod tilemap;
 use ascii::{spawn_ascii_sprite, AsciiPlugin, AsciiSheet};
 use combat::CombatPlugin;
 use debug::DebugPlugin;
+use graphics::GraphicsPlugin;
 use nine_sprite::NineSpritePlugin;
 use player::PlayerPlugin;
 use tilemap::TileMapPlugin;
@@ -59,6 +61,7 @@ fn main() {
         .add_plugin(CombatPlugin)
         .add_plugin(NineSpritePlugin)
         .add_plugin(AsciiPlugin)
+        .add_plugin(GraphicsPlugin)
         .add_startup_system(spawn_camera)
         //.add_startup_system(spawn_dummy_sprite)
         .add_system(frame_limiter)

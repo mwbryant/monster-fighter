@@ -6,6 +6,7 @@ use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use rand::{thread_rng, Rng};
 
 use crate::debug::ENABLE_INSPECTOR;
+use crate::graphics::{AnimatedSprite, FacingDirection, GraphicsHandles, PlayerAnimations};
 use crate::screen_fadeout::{create_fadeout, fadeout};
 use crate::tilemap::{Door, ExitEvent, TileCollider, WildSpawn};
 use crate::{AsciiSheet, GameState, TILE_SIZE};
@@ -15,6 +16,7 @@ pub struct CombatEvent;
 
 #[derive(Component, Inspectable)]
 pub struct Player {
+    pub current_direction: FacingDirection,
     speed: f32,
     hitbox_size: f32,
     just_moved: bool,
@@ -84,20 +86,24 @@ fn basic_player_movement(
 
     let to_move = player.speed * time.delta_seconds() * TILE_SIZE;
 
-    let mut target_x = 0.0;
-    if keyboard.pressed(KeyCode::A) {
-        target_x = -to_move;
-    }
-    if keyboard.pressed(KeyCode::D) {
-        target_x = to_move;
-    }
-
     let mut target_y = 0.0;
     if keyboard.pressed(KeyCode::W) {
+        player.current_direction = FacingDirection::Up;
         target_y = to_move;
     }
     if keyboard.pressed(KeyCode::S) {
+        player.current_direction = FacingDirection::Down;
         target_y = -to_move;
+    }
+
+    let mut target_x = 0.0;
+    if keyboard.pressed(KeyCode::A) {
+        player.current_direction = FacingDirection::Left;
+        target_x = -to_move;
+    }
+    if keyboard.pressed(KeyCode::D) {
+        player.current_direction = FacingDirection::Right;
+        target_x = to_move;
     }
 
     //Check if x movement is valid
@@ -196,14 +202,19 @@ fn hide_player(
 }
 
 fn show_player(
-    mut player_query: Query<(&Children, &mut Visibility), With<Player>>,
+    mut player_query: Query<&mut Visibility, With<Player>>,
+    //Seperate children query to handle players without children
+    player_children_query: Query<&Children, With<Player>>,
     mut child_query: Query<&mut Visibility, Without<Player>>,
 ) {
-    let (children, mut visibility) = player_query.single_mut();
+    let mut visibility = player_query.single_mut();
     visibility.is_visible = true;
-    for child in children.iter() {
-        if let Ok(mut child_visibility) = child_query.get_mut(*child) {
-            child_visibility.is_visible = true;
+
+    for children in player_children_query.iter() {
+        for child in children.iter() {
+            if let Ok(mut child_visibility) = child_query.get_mut(*child) {
+                child_visibility.is_visible = true;
+            }
         }
     }
 }
@@ -235,19 +246,18 @@ fn door_collision(
     }
 }
 
-pub fn spawn_player(mut commands: Commands, ascii: Res<AsciiSheet>) {
-    let mut sprite = TextureAtlasSprite::new(1);
+pub fn spawn_player(
+    mut commands: Commands,
+    graphics: Res<GraphicsHandles>,
+    animations: Res<PlayerAnimations>,
+) {
+    let mut sprite = TextureAtlasSprite::new(animations.walk_down[0]);
     sprite.custom_size = Some(Vec2::splat(TILE_SIZE));
-    sprite.color = Color::rgb(0.3, 0.3, 0.9);
-
-    let mut background_sprite = TextureAtlasSprite::new(0);
-    background_sprite.custom_size = Some(Vec2::splat(TILE_SIZE));
-    background_sprite.color = Color::rgb(0.5, 0.5, 0.5);
 
     commands
         .spawn_bundle(SpriteSheetBundle {
             sprite: sprite,
-            texture_atlas: ascii.0.clone(),
+            texture_atlas: graphics.characters.clone(),
             transform: Transform {
                 translation: Vec3::new(12.0 * TILE_SIZE, -2.0 * TILE_SIZE, 900.0),
                 ..Default::default()
@@ -256,27 +266,20 @@ pub fn spawn_player(mut commands: Commands, ascii: Res<AsciiSheet>) {
         })
         .insert(Name::new("Player"))
         .insert(Player {
+            current_direction: FacingDirection::Down,
             speed: 6.0,
             hitbox_size: 0.90,
             just_moved: false,
             active: true,
         })
+        .insert(AnimatedSprite {
+            current_frame: 0,
+            timer: Timer::from_seconds(0.2, true),
+        })
         .insert(EncounterTracker {
             timer: Timer::from_seconds(1.0, true),
             min_time: 0.5,
             max_time: 2.5,
-        })
-        //Background sprite
-        .with_children(|parent| {
-            parent.spawn_bundle(SpriteSheetBundle {
-                sprite: background_sprite,
-                texture_atlas: ascii.0.clone(),
-                transform: Transform {
-                    translation: Vec3::new(0.0, 0.0, -1.0),
-                    ..Default::default()
-                },
-                ..Default::default()
-            });
         });
 }
 

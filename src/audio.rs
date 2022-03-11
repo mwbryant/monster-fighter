@@ -1,7 +1,6 @@
 use bevy::{asset::LoadState, prelude::*, utils::HashMap};
 use bevy_kira_audio::{Audio, AudioPlugin, AudioSource, InstanceHandle, PlaybackState};
 
-//FIXME bad name
 pub struct AudioManagerPlugin;
 
 impl Plugin for AudioManagerPlugin {

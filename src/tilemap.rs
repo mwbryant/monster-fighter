@@ -196,44 +196,17 @@ fn parse_tile(
 }
 
 fn sprite_lookup(c: char) -> TextureAtlasSprite {
-    let mut tile = match c {
-        '#' => {
-            let mut sprite = TextureAtlasSprite::new(0);
-            sprite
-        }
-        '.' => {
-            let mut sprite = TextureAtlasSprite::new(11);
-            sprite
-        }
-        'W' => {
-            let mut sprite = TextureAtlasSprite::new(4);
-            sprite
-        }
-        'D' => {
-            let mut sprite = TextureAtlasSprite::new(8 * 6);
-            sprite
-        }
-        'G' => {
-            let mut sprite = TextureAtlasSprite::new(8 * 8 + 1);
-            sprite
-        }
-        'R' => {
-            let mut sprite = TextureAtlasSprite::new(8);
-            sprite
-        }
-        'T' => {
-            let mut sprite = TextureAtlasSprite::new(11 * 8 + 1);
-            sprite
-        }
-        '@' => {
-            let mut sprite = TextureAtlasSprite::new(9 * 8 + 5);
-            sprite
-        }
-        _ => {
-            let mut sprite = TextureAtlasSprite::new(8 * 4 + 5);
-            sprite
-        }
-    };
+    let mut tile = TextureAtlasSprite::new(match c {
+        '#' => 0,
+        '.' => 11,
+        'W' => 4,
+        'D' => 8 * 6,
+        'G' => 8 * 8 + 1,
+        'R' => 8,
+        'T' => 11 * 8 + 1,
+        '@' => 9 * 8 + 5,
+        _ => 8 * 4 + 5,
+    });
     tile.custom_size = Some(Vec2::splat(TILE_SIZE));
     tile
 }

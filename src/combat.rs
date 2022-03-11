@@ -60,6 +60,8 @@ impl Plugin for CombatPlugin {
     }
 }
 
+//TODO audio here could be moved
+#[allow(clippy::too_many_arguments)]
 fn fight(
     mut commands: Commands,
     mut event: EventReader<FightEvent>,
@@ -88,7 +90,7 @@ fn fight(
         }
     }
 
-    play_single_sound(audio, &mut audio_state.clips.get_mut(&Clips::Hit).unwrap());
+    play_single_sound(audio, audio_state.clips.get_mut(&Clips::Hit).unwrap());
 
     if enemy.health <= 0 {
         //TODO exp

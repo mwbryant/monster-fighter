@@ -13,8 +13,6 @@ impl Plugin for AudioManagerPlugin {
     }
 }
 
-//TODO is there a better key for the hashmap, it would be nice if plugins could add their own maybe
-//     or maybe its best to keep all audio file loading in one place
 #[derive(Hash, PartialEq, Eq)]
 pub enum Clips {
     Hit,
@@ -43,7 +41,7 @@ fn temp_volume_control(mut audio_state: ResMut<AudioState>, keyboard: Res<Input<
 }
 
 fn check_audio_loading(mut audio_state: ResMut<AudioState>, asset_server: ResMut<AssetServer>) {
-    for (_, mut clip) in &mut audio_state.clips {
+    for mut clip in &mut audio_state.clips.values_mut() {
         if !clip.loaded && asset_server.get_load_state(&clip.handle) == LoadState::Loaded {
             clip.loaded = true;
         }

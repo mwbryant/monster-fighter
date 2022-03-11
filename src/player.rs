@@ -189,14 +189,19 @@ fn grass_collision(
 }
 
 fn hide_player(
-    mut player_query: Query<(&Children, &mut Visibility), With<Player>>,
+    mut player_query: Query<&mut Visibility, With<Player>>,
+    //Seperate children query to handle players without children
+    player_children_query: Query<&Children, With<Player>>,
     mut child_query: Query<&mut Visibility, Without<Player>>,
 ) {
-    let (children, mut visibility) = player_query.single_mut();
+    let mut visibility = player_query.single_mut();
+
     visibility.is_visible = false;
-    for child in children.iter() {
-        if let Ok(mut child_visibility) = child_query.get_mut(*child) {
-            child_visibility.is_visible = false;
+    for children in player_children_query.iter() {
+        for child in children.iter() {
+            if let Ok(mut child_visibility) = child_query.get_mut(*child) {
+                child_visibility.is_visible = false;
+            }
         }
     }
 }

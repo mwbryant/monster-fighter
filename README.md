@@ -20,3 +20,9 @@ cargo run --release
 ## Contributing
 
 Yes please! Any issues, bug fixes, code style fixes are welcome.  This is intended to be an educational project and I'm hoping it's a good example of using bevy to make a simple game.
+
+## assets
+
+Credits for all non-ascii game art to [Lanea Zimmerman](https://opengameart.org/content/tiny-16-basic) [Liscense](https://creativecommons.org/licenses/by/3.0/)
+
+Audio created from [jfxr](https://jfxr.frozenfractal.com/#)

@@ -26,3 +26,6 @@ Yes please! Any issues, bug fixes, code style fixes are welcome.  This is intend
 Credits for all non-ascii game art to [Lanea Zimmerman](https://opengameart.org/content/tiny-16-basic) under [License](https://creativecommons.org/licenses/by/3.0/)
 
 Audio created from [jfxr](https://jfxr.frozenfractal.com/#)
+
+Ascii Sheet from: https://dwarffortresswiki.org/Tileset_repository#9.C3.979
+Author: Dorten, from 2009-02-13

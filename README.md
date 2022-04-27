@@ -27,5 +27,5 @@ Credits for all non-ascii game art to [Lanea Zimmerman](https://opengameart.org/
 
 Audio created from [jfxr](https://jfxr.frozenfractal.com/#)
 
-Ascii Sheet from: https://dwarffortresswiki.org/Tileset_repository#9.C3.979
+Ascii Sheet modified from: https://dwarffortresswiki.org/Tileset_repository#9.C3.979
 Author: Dorten, from 2009-02-13

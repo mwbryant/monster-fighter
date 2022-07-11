@@ -285,8 +285,7 @@ fn create_combat_menu(
         //Needs transforms for parent heirarchy system to work
         .insert(Transform::default())
         .insert(GlobalTransform::default())
-        .push_children(&[fight, run, item, swap])
-        .id();
+        .push_children(&[fight, run, item, swap]);
 }
 
 fn delete_combat_menu(mut commands: Commands, mut menu_query: Query<Entity, With<CombatMenu>>) {

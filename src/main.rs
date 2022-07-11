@@ -4,7 +4,7 @@
 use audio::AudioManagerPlugin;
 #[allow(unused_imports)]
 use bevy::prelude::*;
-use bevy::render::camera::ScalingMode;
+use bevy::{render::camera::ScalingMode, window::PresentMode};
 use bevy::window::WindowMode;
 
 mod ascii;
@@ -47,7 +47,7 @@ fn main() {
             width: height * RESOLUTION,
             height: height,
             title: "Monster Fighter".to_string(),
-            vsync: true,
+            present_mode: PresentMode::Fifo,
             resizable: false,
             mode: WindowMode::Windowed,
             ..Default::default()

@@ -1,14 +1,14 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::{Inspectable, RegisterInspectable};
+use bevy_inspector_egui::Inspectable;
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
-use crate::debug::ENABLE_INSPECTOR;
+
 use crate::graphics::GraphicsHandles;
 use crate::player::Player;
-use crate::screen_fadeout::{fadeout, ScreenFade};
+use crate::screen_fadeout::fadeout;
 use crate::GameState;
 use crate::TILE_SIZE;
 
@@ -46,9 +46,6 @@ impl Plugin for TileMapPlugin {
             .add_startup_system(spawn_sample_map)
             .add_system_set(SystemSet::on_exit(GameState::Overworld).with_system(hide_map))
             .add_system_set(SystemSet::on_enter(GameState::Overworld).with_system(show_map));
-        if ENABLE_INSPECTOR {
-            app.register_inspectable::<ScreenFade<ExitEvent>>();
-        }
     }
 }
 

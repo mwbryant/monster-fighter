@@ -10,7 +10,7 @@ opt-level = 1
 opt-level = 3
 
 [dependencies.bevy]
-version = "0.6"
+version = "0.7"
 default-features = false
 features = [
   "dynamic", 
@@ -25,11 +25,11 @@ features = [
 ]
 
 [dependencies.bevy_kira_audio]
-version = "0.8"
+version = "0.10"
 features = [
   "wav"
 ]
 
 [dependencies]
-bevy-inspector-egui = "0.7"
+bevy-inspector-egui = "0.10"
 rand = "0.8" # Same version as bevy
